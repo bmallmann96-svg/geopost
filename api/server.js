@@ -281,6 +281,121 @@ fastify.get('/posts/user/:userId', { preHandler: [authenticateToken] }, async (r
     return posts
 })
 
+// ── Rotas de Listas ────────────────────────────────────────
+
+fastify.post('/lists', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { title, description, emoji, color } = request.body
+    if (!title) return reply.status(400).send({ error: 'Título é obrigatório' })
+
+    const list = await prisma.list.create({
+        data: {
+            userId: request.user.id,
+            title,
+            description: description || null,
+            emoji: emoji || '📍',
+            color: color || '#F97316',
+        }
+    })
+    return list
+})
+
+fastify.get('/lists/user/:userId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { userId } = request.params
+
+    const lists = await prisma.list.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+            items: {
+                take: 3,
+                include: {
+                    post: { select: { photoUrl: true } }
+                },
+                orderBy: { addedAt: 'desc' }
+            },
+            _count: { select: { items: true } }
+        }
+    })
+
+    return lists.map(l => ({
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        emoji: l.emoji,
+        color: l.color,
+        createdAt: l.createdAt,
+        itemCount: l._count.items,
+        previews: l.items.map(i => i.post.photoUrl)
+    }))
+})
+
+fastify.get('/lists/:listId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { listId } = request.params
+
+    const list = await prisma.list.findUnique({
+        where: { id: listId },
+        include: {
+            user: { select: { id: true, name: true, username: true, avatar: true } },
+            items: {
+                orderBy: { addedAt: 'desc' },
+                include: {
+                    post: {
+                        select: {
+                            id: true, photoUrl: true, mediaType: true,
+                            latitude: true, longitude: true, placeName: true,
+                            rating: true, category: true, caption: true
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    if (!list) return reply.status(404).send({ error: 'Lista não encontrada' })
+
+    return {
+        ...list,
+        posts: list.items.map(i => i.post)
+    }
+})
+
+fastify.post('/lists/:listId/items', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { listId } = request.params
+    const { postId } = request.body
+
+    // Verifica se o post pertence ao usuário logado
+    const post = await prisma.post.findFirst({ where: { id: postId, userId: request.user.id } })
+    if (!post) return reply.status(403).send({ error: 'Post não encontrado ou não pertence a você' })
+
+    // Verifica se a lista pertence ao usuário logado
+    const list = await prisma.list.findFirst({ where: { id: listId, userId: request.user.id } })
+    if (!list) return reply.status(403).send({ error: 'Lista não encontrada' })
+
+    try {
+        await prisma.listItem.create({ data: { listId, postId } })
+        return { success: true }
+    } catch {
+        return { success: true } // unique constraint — ignora duplicata
+    }
+})
+
+fastify.delete('/lists/:listId/items/:postId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { listId, postId } = request.params
+
+    await prisma.listItem.deleteMany({ where: { listId, postId } })
+    return { success: true }
+})
+
+fastify.delete('/lists/:listId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { listId } = request.params
+
+    const list = await prisma.list.findFirst({ where: { id: listId, userId: request.user.id } })
+    if (!list) return reply.status(403).send({ error: 'Não autorizado' })
+
+    await prisma.list.delete({ where: { id: listId } })
+    return { success: true }
+})
+
 const start = async () => {
     try {
         await fastify.listen({ port: 3000, host: '0.0.0.0' })

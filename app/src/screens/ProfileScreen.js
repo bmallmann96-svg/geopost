@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity, FlatList,
-  SafeAreaView, Platform, StatusBar, Dimensions, ActivityIndicator, ScrollView
+  SafeAreaView, Platform, StatusBar, Dimensions, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,6 +17,7 @@ export default function ProfileScreen({ navigation }) {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState('map');
   const [posts, setPosts] = useState([]);
+  const [lists, setLists] = useState([]);
   const [stats, setStats] = useState({ followersCount: 0, followingCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,9 +27,10 @@ export default function ProfileScreen({ navigation }) {
       const token = await AsyncStorage.getItem('@token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [postsRes, statsRes] = await Promise.all([
+      const [postsRes, statsRes, listsRes] = await Promise.all([
         fetch(`${API}/posts/user/${user.id}`, { headers }),
         fetch(`${API}/users/${user.id}`, { headers }),
+        fetch(`${API}/lists/user/${user.id}`, { headers }),
       ]);
 
       if (postsRes.ok) setPosts(await postsRes.json());
@@ -36,6 +38,7 @@ export default function ProfileScreen({ navigation }) {
         const s = await statsRes.json();
         setStats({ followersCount: s.followersCount, followingCount: s.followingCount });
       }
+      if (listsRes.ok) setLists(await listsRes.json());
     } catch (e) {
       console.log('Error fetching profile data', e);
     } finally {
@@ -43,14 +46,17 @@ export default function ProfileScreen({ navigation }) {
     }
   }, [user]);
 
-  // Recarrega sempre que a tela volta ao foco (ex: após seguir alguém)
-  useFocusEffect(
-    useCallback(() => {
-      fetchData();
-    }, [fetchData])
-  );
+  useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
 
   const userInitials = user?.name ? user.name.substring(0, 1).toUpperCase() : 'U';
+
+  // Mapeia qual lista cada post pertence (para cor do pin)
+  const postListColorMap = {};
+  lists.forEach(list => {
+    // A cor já está disponível na lista; mas precisamos saber quais postIds ela tem
+    // Aqui usamos apenas o preview - para pins corretos precisaríamos do detalhe
+    // Deixamos laranja como padrão; ao abrir a lista os pins mostram a cor correta
+  });
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
@@ -110,6 +116,12 @@ export default function ProfileScreen({ navigation }) {
         onPress={() => setViewMode('grid')}
       >
         <Ionicons name="grid-outline" size={24} color={viewMode === 'grid' ? colors.primary : colors.textLight} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.switchButton, viewMode === 'lists' && styles.switchButtonActive]}
+        onPress={() => navigation.navigate('MyLists')}
+      >
+        <Ionicons name="list-outline" size={24} color={viewMode === 'lists' ? colors.primary : colors.textLight} />
       </TouchableOpacity>
     </View>
   );

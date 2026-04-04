@@ -18,6 +18,8 @@ export default function UserProfileScreen({ route, navigation }) {
 
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [lists, setLists] = useState([]);
+  const [viewMode, setViewMode] = useState('posts');
   const [isLoading, setIsLoading] = useState(true);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
@@ -30,13 +32,15 @@ export default function UserProfileScreen({ route, navigation }) {
       const token = await AsyncStorage.getItem('@token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [profileRes, postsRes] = await Promise.all([
+      const [profileRes, postsRes, listsRes] = await Promise.all([
         fetch(`${API}/users/${userId}`, { headers }),
         fetch(`${API}/posts/user/${userId}`, { headers }),
+        fetch(`${API}/lists/user/${userId}`, { headers }),
       ]);
 
       if (profileRes.ok) setProfile(await profileRes.json());
       if (postsRes.ok) setPosts(await postsRes.json());
+      if (listsRes.ok) setLists(await listsRes.json());
     } catch (e) {
       console.log('Error fetching user profile', e);
     } finally {
@@ -167,17 +171,62 @@ export default function UserProfileScreen({ route, navigation }) {
         )}
       </View>
 
-      {/* Posts header */}
-      <View style={styles.postsHeader}>
-        <Ionicons name="grid-outline" size={20} color={colors.text} />
-        <Text style={styles.postsHeaderText}>Posts</Text>
+      {/* Content tabs */}
+      <View style={styles.tabSwitcher}>
+        <TouchableOpacity
+          style={[styles.tabBtn, viewMode === 'posts' && styles.tabBtnActive]}
+          onPress={() => setViewMode('posts')}
+        >
+          <Ionicons name="grid-outline" size={20} color={viewMode === 'posts' ? colors.primary : '#8E8E93'} />
+          <Text style={[styles.tabBtnText, viewMode === 'posts' && styles.tabBtnTextActive]}>Posts</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabBtn, viewMode === 'lists' && styles.tabBtnActive]}
+          onPress={() => setViewMode('lists')}
+        >
+          <Ionicons name="list-outline" size={20} color={viewMode === 'lists' ? colors.primary : '#8E8E93'} />
+          <Text style={[styles.tabBtnText, viewMode === 'lists' && styles.tabBtnTextActive]}>Listas</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
+  const renderListsContent = () => (
+    <FlatList
+      data={lists}
+      keyExtractor={item => item.id}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 30 }}
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          style={styles.listCard}
+          onPress={() => navigation.navigate('ListDetail', { listId: item.id, listTitle: item.title, listEmoji: item.emoji, listColor: item.color })}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.listAccent, { backgroundColor: item.color }]} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.listCardTitle}>{item.emoji} {item.title}</Text>
+            {item.description ? <Text style={styles.listCardDesc} numberOfLines={1}>{item.description}</Text> : null}
+            <Text style={styles.listCardCount}>{item.itemCount} lugares</Text>
+          </View>
+          <View style={styles.listPreviewRow}>
+            {item.previews.slice(0, 2).map((url, i) => (
+              <Image key={i} source={{ uri: url }} style={styles.listPreviewThumb} />
+            ))}
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#8E8E93" style={{ alignSelf: 'center', marginLeft: 4 }} />
+        </TouchableOpacity>
+      )}
+      ListEmptyComponent={
+        <View style={{ alignItems: 'center', paddingTop: 40 }}>
+          <Text style={{ color: '#8E8E93', fontSize: 15 }}>Este usuário não tem listas públicas.</Text>
+        </View>
+      }
+    />
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      {posts.length === 0 ? (
+      {posts.length === 0 && viewMode === 'posts' ? (
         <>
           <ListHeader />
           <View style={styles.emptyPosts}>
@@ -187,15 +236,17 @@ export default function UserProfileScreen({ route, navigation }) {
         </>
       ) : (
         <FlatList
-          data={posts}
+          data={viewMode === 'posts' ? posts : []}
           keyExtractor={item => item.id}
-          numColumns={3}
+          numColumns={viewMode === 'posts' ? 3 : 1}
+          key={viewMode} // força re-render ao trocar numColumns
           ListHeaderComponent={<ListHeader />}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.gridItem}>
               <Image source={{ uri: item.photoUrl }} style={styles.gridImage} />
             </TouchableOpacity>
           )}
+          ListFooterComponent={viewMode === 'lists' ? renderListsContent() : null}
           contentContainerStyle={{ paddingBottom: 30 }}
         />
       )}
@@ -345,6 +396,39 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     marginLeft: 8,
   },
+  tabSwitcher: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+    marginTop: 8,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 6,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabBtnActive: { borderBottomColor: colors.primary },
+  tabBtnText: { fontSize: 14, fontWeight: '600', color: '#8E8E93' },
+  tabBtnTextActive: { color: colors.primary },
+  // Listas inline
+  listCard: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  listAccent: { width: 4, borderRadius: 2, marginRight: 12 },
+  listCardTitle: { fontSize: 15, fontWeight: '700', color: '#1C1C1E' },
+  listCardDesc: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
+  listCardCount: { fontSize: 12, color: '#8E8E93', marginTop: 4 },
+  listPreviewRow: { flexDirection: 'row', alignItems: 'center' },
+  listPreviewThumb: { width: 44, height: 44, borderRadius: 6, marginLeft: 4, backgroundColor: '#F5F5F5' },
   gridItem: {
     width: CARD_SIZE,
     height: CARD_SIZE,

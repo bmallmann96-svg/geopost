@@ -19,6 +19,7 @@ model User {
   posts     Post[]
   followers Follow[] @relation("following")
   following Follow[] @relation("follower")
+  lists     List[]
 }
 
 model Post {
@@ -47,6 +48,7 @@ model Post {
   ambienceRating Int?
   valueRating    Int?
   createdAt DateTime @default(now())
+  listItems ListItem[]
 }
 
 model Follow {
@@ -58,4 +60,27 @@ model Follow {
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
+}
+
+model List {
+  id          String     @id @default(uuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  emoji       String     @default("📍")
+  color       String     @default("#F97316")
+  createdAt   DateTime   @default(now())
+  items       ListItem[]
+}
+
+model ListItem {
+  id      String   @id @default(uuid())
+  listId  String
+  list    List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  postId  String
+  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  addedAt DateTime @default(now())
+
+  @@unique([listId, postId])
 }
