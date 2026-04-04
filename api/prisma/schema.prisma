@@ -11,6 +11,7 @@ model User {
   id        String   @id @default(uuid())
   username  String   @unique
   email     String   @unique
+  password  String
   name      String
   bio       String?
   avatar    String?
@@ -32,6 +33,7 @@ model Post {
   placeName String
   placeId   String
   category  String
+  metadata  Json?
   createdAt DateTime @default(now())
 }
 
