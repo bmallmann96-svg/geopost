@@ -78,6 +78,34 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 - /api/prisma/schema.prisma — modelo do banco
 - /infra/docker-compose.yml — banco e redis
 
+## Rotas da API
+
+### Auth
+- `POST /auth/register` — cadastro de usuário
+- `POST /auth/login` — login com email/senha
+- `GET /auth/me` — retorna usuário logado (requer token)
+
+### Posts
+- `POST /posts` — cria novo post (requer token)
+- `GET /posts/feed` — feed de todos os posts (requer token)
+- `GET /posts/user/:userId` — posts de um usuário específico (requer token)
+
+### Usuários & Social
+- `GET /users/search?q=termo` — busca usuários por nome/username; exclui o próprio usuário; retorna `isFollowing` (requer token)
+- `POST /follows` — body: `{ followingId }`; cria relação de follow (requer token)
+- `DELETE /follows/:userId` — remove relação de follow com o userId (requer token)
+
+## Estrutura da ExploreScreen
+A tela Explorar foi completamente refatorada com:
+- **Header fixo**: título "Explorar" + barra de busca com ícone de lupa (fundo #F5F5F5)
+- **Debounce de 500ms**: pesquisa é disparada 500ms após o usuário parar de digitar
+- **Pills horizontais**: filtros "Tudo", "Usuários", "Restaurantes", "Pontos Turísticos", "Momentos"
+- **Estado vazio (sem pesquisa)**: alternador Mapa/Grade
+  - Modo Mapa: MapView com localização real via `expo-location` e 5 pins mock próximos
+  - Modo Grade: grade 2 colunas com 8 posts recomendados fake
+- **Com pesquisa + filtro de lugar**: mensagem "Em breve" centralizada
+- **Com pesquisa + filtro Usuários/Tudo**: lista com avatar, nome, username e botão "Seguir"/"Seguindo" (integrado às rotas `/follows`)
+
 ## Próximos passos
 - [x] Tela de login com Google e Email
 - [x] Conexão Real da API de Auth com JWT, Bcrypt e AsyncStorage
@@ -87,6 +115,8 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 - [x] Mapa de exploração e TikTok style Explore
 - [x] UI Completa de Perfil com Maps View global e Grid View populados com API (GET /posts/user/:id)
 - [x] Migração de todas as URLs da API de `http://192.168.0.15:3000` para `https://geopost-production.up.railway.app` (produção Railway)
+- [x] ExploreScreen refatorada: busca de usuários, follow/unfollow, filtros pill, modo mapa e grade
+- [x] Tela de Configurações com seções Conta, Suporte e logout
 
 ## Observações técnicas
 - IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)

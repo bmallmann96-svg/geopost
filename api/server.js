@@ -88,6 +88,73 @@ fastify.get('/auth/me', { preHandler: [authenticateToken] }, async (request, rep
     return user
 })
 
+fastify.get('/users/search', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { q } = request.query
+    if (!q) return []
+
+    const users = await prisma.user.findMany({
+        where: {
+            id: { not: request.user.id },
+            OR: [
+                { name: { contains: q, mode: 'insensitive' } },
+                { username: { contains: q, mode: 'insensitive' } }
+            ]
+        },
+        select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            followers: {
+                where: { followerId: request.user.id }
+            }
+        },
+        take: 20
+    })
+
+    return users.map(u => ({
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        avatar: u.avatar,
+        isFollowing: u.followers.length > 0
+    }))
+})
+
+fastify.post('/follows', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { followingId } = request.body
+    
+    if (followingId === request.user.id) {
+        return reply.status(400).send({ error: 'Você não pode seguir a si mesmo' })
+    }
+
+    try {
+        await prisma.follow.create({
+            data: {
+                followerId: request.user.id,
+                followingId
+            }
+        })
+        return { success: true }
+    } catch (err) {
+        // Ignora erro de unique constraint
+        return { success: true }
+    }
+})
+
+fastify.delete('/follows/:userId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { userId } = request.params
+
+    await prisma.follow.deleteMany({
+        where: {
+            followerId: request.user.id,
+            followingId: userId
+        }
+    })
+
+    return { success: true }
+})
+
 fastify.post('/posts', { preHandler: [authenticateToken] }, async (request, reply) => {
     const { photoUrl, caption, rating, latitude, longitude, placeName, placeId, category, extras } = request.body
     
