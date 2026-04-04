@@ -86,9 +86,9 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 - `GET /auth/me` — retorna usuário logado (requer token)
 
 ### Posts
-- `POST /posts` — cria novo post (requer token)
+- `POST /posts` — cria novo post; aceita todos os campos de restaurante: `mediaType`, `cuisineTypes[]`, `priceRange`, `occasions[]`, `mealTimes[]`, `wouldReturn`, `bestDish`, `tip`, `foodRating`, `serviceRating`, `ambienceRating`, `valueRating` (requer token)
 - `GET /posts/feed` — feed inteligente dos últimos 30 dias: posts de usuários seguidos aparecem primeiro (priority=1), depois os demais (priority=2); ordenado por prioridade e recente; limite de 20 (requer token)
-- `GET /posts/user/:userId` — posts de um usuário específico (requer token)
+- `GET /posts/user/:userId` — posts de um usuário específico; retorna todos os campos incluindo os de restaurante (requer token)
 
 ### Usuários & Social
 - `GET /users/search?q=termo` — busca usuários por nome/username; exclui o próprio usuário; retorna `isFollowing` (requer token)
@@ -120,6 +120,9 @@ A tela Explorar foi completamente refatorada com:
 - [x] Tela de Configurações com seções Conta, Suporte e logout
 - [x] Perfil de outro usuário (UserProfileScreen) com contadores reais e botão Seguir/Seguindo
 - [x] Feed inteligente: posts de seguidos aparecem primeiro; separador visual "Outros posts" entre os grupos
+- [x] Fluxo de criação de restaurante: formulário rico com avaliações por dimensão, chips de culinária/ocasião/horário, faixa de preço, melhor pedido, dica e "Visitaria novamente"
+- [x] Suporte a vídeo no upload (NewPostScreen): seleção foto/vídeo, validação de 90s, preview com expo-av, upload para Cloudinary `/video/upload`
+- [x] PostCard expandido exibe campos ricos de restaurante: notas por dimensão, chips, badge de retorno, dica em itálico, melhor pedido
 
 ## Observações técnicas
 - IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)

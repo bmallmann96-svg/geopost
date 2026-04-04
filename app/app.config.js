@@ -7,7 +7,7 @@ export default {
     ios: {
         supportsTablet: false,
         config: {
-            googleMapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY_HERE',
+            googleMapsApiKey: 'AIzaSyA5u0yMtmI3V23lw177o-889C04vC4JIGI',
         },
     },
     android: {
@@ -16,7 +16,7 @@ export default {
         },
         config: {
             googleMaps: {
-                apiKey: 'YOUR_GOOGLE_MAPS_API_KEY_HERE',
+                apiKey: 'AIzaSyA5u0yMtmI3V23lw177o-889C04vC4JIGI',
             },
         },
     },
