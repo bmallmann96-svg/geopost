@@ -12,7 +12,6 @@ const API = 'https://geopost-production.up.railway.app';
 
 // ── Componentes auxiliares ──────────────────────────────────
 
-/** Estrelas interativas para input */
 const StarRatingInput = ({ rating, onRatingChange, size = 36 }) => (
   <View style={{ flexDirection: 'row' }}>
     {[1, 2, 3, 4, 5].map((star) => (
@@ -27,21 +26,26 @@ const StarRatingInput = ({ rating, onRatingChange, size = 36 }) => (
   </View>
 );
 
-/** Chip de seleção — multi ou single */
 const Chip = ({ label, selected, onPress }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={[styles.chip, selected && styles.chipSelected]}
-    activeOpacity={0.7}
-  >
+  <TouchableOpacity onPress={onPress} style={[styles.chip, selected && styles.chipSelected]} activeOpacity={0.7}>
     <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
   </TouchableOpacity>
 );
 
-/** Título de seção */
-const SectionTitle = ({ title }) => <Text style={styles.sectionTitle}>{title}</Text>;
+const SectionTitle = ({ title, required }) => (
+  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+    <Text style={styles.sectionTitle}>{title}</Text>
+    {required && <Text style={styles.requiredBadge}> obrigatório</Text>}
+  </View>
+);
 
-/** Campo de texto com ícone */
+const FieldLabel = ({ label, optional }) => (
+  <Text style={styles.fieldLabel}>
+    {label}
+    {optional && <Text style={styles.optionalText}> (opcional)</Text>}
+  </Text>
+);
+
 const CustomInput = ({ icon, placeholder, value, onChangeText, multiline, maxLength }) => (
   <View style={[styles.inputContainer, multiline && styles.inputContainerMultiline]}>
     <Ionicons name={icon} size={20} color={colors.textLight} style={styles.inputIcon} />
@@ -58,24 +62,35 @@ const CustomInput = ({ icon, placeholder, value, onChangeText, multiline, maxLen
   </View>
 );
 
-// ── Dados de opções ─────────────────────────────────────────
+// ── Opções ──────────────────────────────────────────────────
 const CUISINE_OPTIONS = ['Brasileira', 'Italiana', 'Japonesa', 'Árabe', 'Contemporânea', 'Bar/Petiscos', 'Frutos do Mar', 'Vegana/Vegetariana', 'Pizza', 'Outro'];
 const PRICE_OPTIONS = ['$', '$$', '$$$', '$$$$'];
 const OCCASION_OPTIONS = ['Romântico', 'Família', 'Amigos', 'Negócios', 'Solo', 'Data', 'Aniversário'];
 const MEAL_TIME_OPTIONS = ['Café da manhã', 'Almoço', 'Jantar', 'Happy Hour', 'Madrugada'];
 const WOULD_RETURN_OPTIONS = ['Sim', 'Talvez', 'Não'];
 
+const ATTRACTION_TYPES = ['Monumento', 'Museu', 'Parque', 'Praia', 'Trilha', 'Cachoeira', 'Centro histórico', 'Mirante', 'Religioso', 'Parque temático', 'Outro'];
+const VISIT_DURATION_OPTIONS = ['Menos de 1h', '1-2h', '2-4h', 'Dia inteiro'];
+const BEST_SEASON_OPTIONS = ['Jan-Mar', 'Abr-Jun', 'Jul-Set', 'Out-Dez'];
+const BEST_TIME_OPTIONS = ['Manhã', 'Tarde', 'Anoitecer', 'Qualquer'];
+const CROWD_LEVEL_OPTIONS = ['Tranquilo', 'Moderado', 'Muito lotado'];
+const HOW_TO_GET_THERE_OPTIONS = ['A pé', 'Carro', 'Transporte público', 'Barco', 'Trilha'];
+const WHEELCHAIR_OPTIONS = ['Sim', 'Parcialmente', 'Não'];
+const PETS_OPTIONS = ['Sim', 'Não'];
+
 // ── Tela principal ──────────────────────────────────────────
 export default function PostDetailsScreen({ route, navigation }) {
   const { type, place, photoUrl, mediaType = 'photo' } = route?.params || { type: 'moment' };
 
-  // Estado geral
   const [caption, setCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Estado de restaurante
+  // Campos compartilhados
   const [rating, setRating] = useState(0);
+  const [wouldReturn, setWouldReturn] = useState('');
+
+  // Restaurante
   const [foodRating, setFoodRating] = useState(0);
   const [serviceRating, setServiceRating] = useState(0);
   const [ambienceRating, setAmbienceRating] = useState(0);
@@ -84,68 +99,77 @@ export default function PostDetailsScreen({ route, navigation }) {
   const [priceRange, setPriceRange] = useState('');
   const [occasions, setOccasions] = useState([]);
   const [mealTimes, setMealTimes] = useState([]);
-  const [wouldReturn, setWouldReturn] = useState('');
   const [bestDish, setBestDish] = useState('');
   const [tip, setTip] = useState('');
 
-  // Estado de turístico (legado)
-  const [entryFee, setEntryFee] = useState('');
-  const [hours, setHours] = useState('');
-  const [tips, setTips] = useState('');
+  // Ponto Turístico
+  const [experienceRating, setExperienceRating] = useState(0);
+  const [valueRatingT, setValueRatingT] = useState(0);
+  const [accessibilityRating, setAccessibilityRating] = useState(0);
+  const [conservationRating, setConservationRating] = useState(0);
+  const [attractionTypes, setAttractionTypes] = useState([]);
+  const [visitDuration, setVisitDuration] = useState('');
+  const [bestSeason, setBestSeason] = useState([]);
+  const [bestTimeOfDay, setBestTimeOfDay] = useState([]);
+  const [crowdLevel, setCrowdLevel] = useState('');
+  const [howToGetThere, setHowToGetThere] = useState([]);
+  const [wheelchairAccess, setWheelchairAccess] = useState('');
+  const [petsAllowed, setPetsAllowed] = useState('');
+  const [touristTip, setTouristTip] = useState('');
+  const [mustSee, setMustSee] = useState('');
 
-  const toggleMulti = (value, list, setList) => {
+  const toggleMulti = (value, list, setList) =>
     setList(list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
-  };
+
+  // ── Validações de publicação ─────────────────────────────
+  const canPublishRestaurant = rating > 0;
+  const canPublishTourist = rating > 0 && touristTip.trim().length > 0 && wouldReturn !== '';
+  const canPublish =
+    type === 'restaurant' ? canPublishRestaurant :
+    type === 'tourist' ? canPublishTourist : true;
 
   const handlePublish = async () => {
+    if (type === 'tourist' && !canPublishTourist) {
+      Alert.alert('Campos obrigatórios', 'Preencha: Avaliação geral, Dica principal e Visitaria novamente.');
+      return;
+    }
     setIsSubmitting(true);
     setErrorMsg('');
     try {
       const token = await AsyncStorage.getItem('@token');
+      let body;
 
-      const body =
-        type === 'restaurant'
-          ? {
-              photoUrl,
-              caption,
-              rating,
-              latitude: -23.5505,
-              longitude: -46.6333,
-              placeName: place || 'Local desconhecido',
-              placeId: 'fake-id',
-              category: type,
-              mediaType,
-              cuisineTypes,
-              priceRange,
-              occasions,
-              mealTimes,
-              wouldReturn,
-              bestDish,
-              tip,
-              foodRating,
-              serviceRating,
-              ambienceRating,
-              valueRating,
-            }
-          : {
-              photoUrl,
-              caption,
-              rating,
-              latitude: -23.5505,
-              longitude: -46.6333,
-              placeName: place || 'Local desconhecido',
-              placeId: 'fake-id',
-              category: type,
-              mediaType,
-              extras: { entryFee, hours, tips },
-            };
+      if (type === 'restaurant') {
+        body = {
+          photoUrl, caption, rating,
+          latitude: -23.5505, longitude: -46.6333,
+          placeName: place || 'Local desconhecido', placeId: 'fake-id', category: type, mediaType,
+          cuisineTypes, priceRange, occasions, mealTimes, wouldReturn,
+          bestDish, tip, foodRating, serviceRating, ambienceRating, valueRating,
+        };
+      } else if (type === 'tourist') {
+        body = {
+          photoUrl, caption, rating,
+          latitude: -23.5505, longitude: -46.6333,
+          placeName: place || 'Local desconhecido', placeId: 'fake-id', category: type, mediaType,
+          attractionTypes, visitDuration, bestSeason, bestTimeOfDay, crowdLevel,
+          howToGetThere, wheelchairAccess, petsAllowed, touristTip, mustSee,
+          experienceRating, accessibilityRating: accessibilityRating, conservationRating,
+          valueRating: valueRatingT, wouldReturn,
+        };
+      } else {
+        body = {
+          photoUrl, caption, rating,
+          latitude: -23.5505, longitude: -46.6333,
+          placeName: place || 'Local desconhecido', placeId: 'fake-id', category: type, mediaType,
+        };
+      }
 
       const res = await fetch(`${API}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) throw new Error('Erro ao publicar postagem.');
       navigation.navigate('Feed');
     } catch (e) {
@@ -155,16 +179,14 @@ export default function PostDetailsScreen({ route, navigation }) {
     }
   };
 
-  // ── Seções do formulário de Restaurante ──────────────────
+  // ── Formulário de Restaurante ────────────────────────────
   const renderRestaurantFields = () => (
     <>
-      {/* Avaliação geral */}
       <View style={styles.section}>
-        <SectionTitle title="Avaliação geral" />
+        <SectionTitle title="Avaliação geral" required />
         <StarRatingInput rating={rating} onRatingChange={setRating} size={36} />
       </View>
 
-      {/* Avaliação por dimensão */}
       <View style={styles.section}>
         <SectionTitle title="Avalie por dimensão" />
         {[
@@ -180,55 +202,138 @@ export default function PostDetailsScreen({ route, navigation }) {
         ))}
       </View>
 
-      {/* Sobre o lugar */}
       <View style={styles.section}>
         <SectionTitle title="Sobre o lugar" />
-
-        <Text style={styles.fieldLabel}>Tipo de cozinha</Text>
+        <FieldLabel label="Tipo de cozinha" optional />
         <View style={styles.chipsWrap}>
           {CUISINE_OPTIONS.map(o => (
-            <Chip
-              key={o}
-              label={o}
-              selected={cuisineTypes.includes(o)}
-              onPress={() => toggleMulti(o, cuisineTypes, setCuisineTypes)}
-            />
+            <Chip key={o} label={o} selected={cuisineTypes.includes(o)} onPress={() => toggleMulti(o, cuisineTypes, setCuisineTypes)} />
           ))}
         </View>
-
-        <Text style={styles.fieldLabel}>Faixa de preço</Text>
+        <FieldLabel label="Faixa de preço" optional />
         <View style={styles.chipsRow}>
           {PRICE_OPTIONS.map(o => (
-            <Chip
-              key={o}
-              label={o}
-              selected={priceRange === o}
-              onPress={() => setPriceRange(priceRange === o ? '' : o)}
-            />
+            <Chip key={o} label={o} selected={priceRange === o} onPress={() => setPriceRange(priceRange === o ? '' : o)} />
           ))}
         </View>
-
-        <Text style={styles.fieldLabel}>Ocasião</Text>
+        <FieldLabel label="Ocasião" optional />
         <View style={styles.chipsWrap}>
           {OCCASION_OPTIONS.map(o => (
-            <Chip
-              key={o}
-              label={o}
-              selected={occasions.includes(o)}
-              onPress={() => toggleMulti(o, occasions, setOccasions)}
-            />
+            <Chip key={o} label={o} selected={occasions.includes(o)} onPress={() => toggleMulti(o, occasions, setOccasions)} />
+          ))}
+        </View>
+        <FieldLabel label="Horário da visita" optional />
+        <View style={styles.chipsWrap}>
+          {MEAL_TIME_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={mealTimes.includes(o)} onPress={() => toggleMulti(o, mealTimes, setMealTimes)} />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <SectionTitle title="Sua opinião" />
+        <FieldLabel label="Melhor pedido" optional />
+        <CustomInput icon="restaurant-outline" placeholder="Ex: Risoto de camarão" value={bestDish} onChangeText={setBestDish} />
+        <View style={{ height: 12 }} />
+        <FieldLabel label={`Dica (${tip.length}/280)`} optional />
+        <CustomInput icon="bulb-outline" placeholder="O que você recomenda para quem for pela primeira vez?" value={tip} onChangeText={setTip} multiline maxLength={280} />
+        <FieldLabel label="Visitaria novamente?" optional />
+        <View style={styles.chipsRow}>
+          {WOULD_RETURN_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={wouldReturn === o} onPress={() => setWouldReturn(wouldReturn === o ? '' : o)} />
+          ))}
+        </View>
+      </View>
+    </>
+  );
+
+  // ── Formulário de Ponto Turístico ────────────────────────
+  const renderTouristFields = () => (
+    <>
+      {/* Avaliação geral — obrigatório */}
+      <View style={styles.section}>
+        <SectionTitle title="Avaliação geral" required />
+        <StarRatingInput rating={rating} onRatingChange={setRating} size={36} />
+      </View>
+
+      {/* Avalie por dimensão — opcional */}
+      <View style={styles.section}>
+        <SectionTitle title="Avalie por dimensão" />
+        {[
+          { label: 'Experiência', value: experienceRating, setter: setExperienceRating },
+          { label: 'Custo-benefício', value: valueRatingT, setter: setValueRatingT },
+          { label: 'Acessibilidade', value: accessibilityRating, setter: setAccessibilityRating },
+          { label: 'Conservação', value: conservationRating, setter: setConservationRating },
+        ].map(({ label, value, setter }) => (
+          <View key={label} style={styles.dimensionRow}>
+            <Text style={styles.dimensionLabel}>{label}<Text style={styles.optionalText}> (opcional)</Text></Text>
+            <StarRatingInput rating={value} onRatingChange={setter} size={22} />
+          </View>
+        ))}
+      </View>
+
+      {/* Sobre a visita — opcional */}
+      <View style={styles.section}>
+        <SectionTitle title="Sobre a visita" />
+
+        <FieldLabel label="Tipo de atrativo" optional />
+        <View style={styles.chipsWrap}>
+          {ATTRACTION_TYPES.map(o => (
+            <Chip key={o} label={o} selected={attractionTypes.includes(o)} onPress={() => toggleMulti(o, attractionTypes, setAttractionTypes)} />
           ))}
         </View>
 
-        <Text style={styles.fieldLabel}>Horário da visita</Text>
+        <FieldLabel label="Tempo recomendado" optional />
         <View style={styles.chipsWrap}>
-          {MEAL_TIME_OPTIONS.map(o => (
-            <Chip
-              key={o}
-              label={o}
-              selected={mealTimes.includes(o)}
-              onPress={() => toggleMulti(o, mealTimes, setMealTimes)}
-            />
+          {VISIT_DURATION_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={visitDuration === o} onPress={() => setVisitDuration(visitDuration === o ? '' : o)} />
+          ))}
+        </View>
+
+        <FieldLabel label="Melhor época" optional />
+        <View style={styles.chipsWrap}>
+          {BEST_SEASON_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={bestSeason.includes(o)} onPress={() => toggleMulti(o, bestSeason, setBestSeason)} />
+          ))}
+        </View>
+
+        <FieldLabel label="Melhor horário" optional />
+        <View style={styles.chipsWrap}>
+          {BEST_TIME_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={bestTimeOfDay.includes(o)} onPress={() => toggleMulti(o, bestTimeOfDay, setBestTimeOfDay)} />
+          ))}
+        </View>
+
+        <FieldLabel label="Lotação" optional />
+        <View style={styles.chipsRow}>
+          {CROWD_LEVEL_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={crowdLevel === o} onPress={() => setCrowdLevel(crowdLevel === o ? '' : o)} />
+          ))}
+        </View>
+      </View>
+
+      {/* Acesso — opcional */}
+      <View style={styles.section}>
+        <SectionTitle title="Acesso" />
+
+        <FieldLabel label="Como chegar" optional />
+        <View style={styles.chipsWrap}>
+          {HOW_TO_GET_THERE_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={howToGetThere.includes(o)} onPress={() => toggleMulti(o, howToGetThere, setHowToGetThere)} />
+          ))}
+        </View>
+
+        <FieldLabel label="Acessível para cadeirantes" optional />
+        <View style={styles.chipsRow}>
+          {WHEELCHAIR_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={wheelchairAccess === o} onPress={() => setWheelchairAccess(wheelchairAccess === o ? '' : o)} />
+          ))}
+        </View>
+
+        <FieldLabel label="Permite animais" optional />
+        <View style={styles.chipsRow}>
+          {PETS_OPTIONS.map(o => (
+            <Chip key={o} label={o} selected={petsAllowed === o} onPress={() => setPetsAllowed(petsAllowed === o ? '' : o)} />
           ))}
         </View>
       </View>
@@ -237,54 +342,35 @@ export default function PostDetailsScreen({ route, navigation }) {
       <View style={styles.section}>
         <SectionTitle title="Sua opinião" />
 
-        <Text style={styles.fieldLabel}>Melhor pedido</Text>
-        <CustomInput
-          icon="restaurant-outline"
-          placeholder="Ex: Risoto de camarão"
-          value={bestDish}
-          onChangeText={setBestDish}
-        />
-
-        <View style={{ height: 12 }} />
-        <Text style={styles.fieldLabel}>Dica ({tip.length}/280)</Text>
+        <FieldLabel label={`Dica principal (${touristTip.length}/280)`} />
+        <Text style={styles.requiredHint}>* obrigatório</Text>
         <CustomInput
           icon="bulb-outline"
-          placeholder="O que você recomenda para quem for pela primeira vez?"
-          value={tip}
-          onChangeText={setTip}
+          placeholder="O que você recomenda para quem vai pela primeira vez?"
+          value={touristTip}
+          onChangeText={setTouristTip}
           multiline
           maxLength={280}
         />
 
-        <Text style={styles.fieldLabel}>Visitaria novamente?</Text>
+        <View style={{ height: 12 }} />
+        <FieldLabel label="O que não perder" optional />
+        <CustomInput
+          icon="eye-outline"
+          placeholder="Ex: Pôr do sol visto do mirante"
+          value={mustSee}
+          onChangeText={setMustSee}
+        />
+
+        <FieldLabel label="Visitaria novamente?" />
+        <Text style={styles.requiredHint}>* obrigatório</Text>
         <View style={styles.chipsRow}>
           {WOULD_RETURN_OPTIONS.map(o => (
-            <Chip
-              key={o}
-              label={o}
-              selected={wouldReturn === o}
-              onPress={() => setWouldReturn(wouldReturn === o ? '' : o)}
-            />
+            <Chip key={o} label={o} selected={wouldReturn === o} onPress={() => setWouldReturn(wouldReturn === o ? '' : o)} />
           ))}
         </View>
       </View>
     </>
-  );
-
-  // ── Seção de Ponto Turístico (legado) ────────────────────
-  const renderTouristFields = () => (
-    <View style={styles.section}>
-      <SectionTitle title="Avaliação" />
-      <StarRatingInput rating={rating} onRatingChange={setRating} size={36} />
-      <View style={styles.section}>
-        <SectionTitle title="Detalhes" />
-        <CustomInput icon="ticket-outline" placeholder="Custo de entrada (Grátis, R$ 20...)" value={entryFee} onChangeText={setEntryFee} />
-        <View style={{ height: 12 }} />
-        <CustomInput icon="time-outline" placeholder="Horário sugerido" value={hours} onChangeText={setHours} />
-        <View style={{ height: 12 }} />
-        <CustomInput icon="bulb-outline" placeholder="Dicas úteis (O que levar, onde estacionar...)" value={tips} onChangeText={setTips} multiline />
-      </View>
-    </View>
   );
 
   return (
@@ -303,7 +389,6 @@ export default function PostDetailsScreen({ route, navigation }) {
             <Text style={{ color: 'red', textAlign: 'center', marginBottom: 16, fontWeight: '500' }}>{errorMsg}</Text>
           ) : null}
 
-          {/* Legenda */}
           <View style={styles.section}>
             <SectionTitle title="Legenda" />
             <CustomInput
@@ -321,9 +406,9 @@ export default function PostDetailsScreen({ route, navigation }) {
 
         <View style={styles.footer}>
           <TouchableOpacity
-            style={styles.publishButton}
+            style={[styles.publishButton, !canPublish && styles.publishButtonDisabled]}
             onPress={handlePublish}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canPublish}
             activeOpacity={0.8}
           >
             {isSubmitting ? (
@@ -332,6 +417,9 @@ export default function PostDetailsScreen({ route, navigation }) {
               <Text style={styles.publishButtonText}>Publicar Post</Text>
             )}
           </TouchableOpacity>
+          {!canPublish && type === 'tourist' && (
+            <Text style={styles.publishHint}>Preencha: avaliação, dica principal e se visitaria novamente</Text>
+          )}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -356,10 +444,12 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 40 },
 
   section: { marginBottom: 28 },
-  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text, marginBottom: 14 },
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+  requiredBadge: { fontSize: 12, fontWeight: '600', color: colors.primary },
   fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.textLight, marginTop: 16, marginBottom: 8 },
+  optionalText: { fontSize: 12, fontWeight: '400', color: '#AEAEB2', fontStyle: 'italic' },
+  requiredHint: { fontSize: 12, color: colors.primary, marginTop: -6, marginBottom: 8 },
 
-  // Dimensão row
   dimensionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,11 +458,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  dimensionLabel: { fontSize: 15, color: colors.text, fontWeight: '500' },
+  dimensionLabel: { fontSize: 15, color: colors.text, fontWeight: '500', flex: 1 },
 
-  // Chips
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chipsRow: { flexDirection: 'row', gap: 8 },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -384,7 +473,6 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, fontWeight: '500', color: '#1C1C1E' },
   chipTextSelected: { color: '#FFFFFF' },
 
-  // Inputs
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -398,7 +486,6 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 16, color: colors.text, minHeight: 52 },
   inputMultiline: { minHeight: 100 },
 
-  // Footer
   footer: {
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 0 : 20,
@@ -417,5 +504,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  publishButtonDisabled: { backgroundColor: '#D1D1D6', shadowOpacity: 0 },
   publishButtonText: { color: colors.white, fontSize: 17, fontWeight: '600' },
+  publishHint: { textAlign: 'center', color: '#8E8E93', fontSize: 12, marginTop: 8 },
 });

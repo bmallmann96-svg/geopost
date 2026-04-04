@@ -50,6 +50,20 @@ export default function FeedScreen() {
           serviceRating: p.serviceRating,
           ambienceRating: p.ambienceRating,
           valueRating: p.valueRating,
+          // Campos de ponto turístico
+          visitDuration: p.visitDuration,
+          bestSeason: p.bestSeason,
+          bestTimeOfDay: p.bestTimeOfDay,
+          crowdLevel: p.crowdLevel,
+          howToGetThere: p.howToGetThere,
+          wheelchairAccess: p.wheelchairAccess,
+          petsAllowed: p.petsAllowed,
+          touristTip: p.touristTip,
+          mustSee: p.mustSee,
+          attractionTypes: p.attractionTypes,
+          experienceRating: p.experienceRating,
+          accessibilityRating: p.accessibilityRating,
+          conservationRating: p.conservationRating,
         }));
         setPosts(formattedPosts);
       }

@@ -171,7 +171,102 @@ export default function PostCard({ post }) {
               </>
             )}
 
-            {/* ── Campos legados (tourist/moment) ── */}
+            {/* ── Campos de ponto turístico ─────── */}
+            {post.category === 'tourist' && (
+              <>
+                {/* Avaliações por dimensão */}
+                {(post.experienceRating || post.valueRating || post.accessibilityRating || post.conservationRating) && (
+                  <View style={styles.extraInfoBox}>
+                    {[
+                      { label: 'Experiência', value: post.experienceRating },
+                      { label: 'Custo-benefício', value: post.valueRating },
+                      { label: 'Acessibilidade', value: post.accessibilityRating },
+                      { label: 'Conservação', value: post.conservationRating },
+                    ].filter(d => d.value).map(({ label, value }) => (
+                      <View key={label} style={styles.dimensionRow}>
+                        <Text style={styles.dimensionLabel}>{label}</Text>
+                        <StarsRating rating={value} size="small" />
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Dica principal */}
+                {post.touristTip && (
+                  <View style={styles.tipBox}>
+                    <Text style={styles.tipText}>"{post.touristTip}"</Text>
+                  </View>
+                )}
+
+                {/* O que não perder */}
+                {post.mustSee && (
+                  <View style={styles.bestDishRow}>
+                    <Ionicons name="eye-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                    <Text style={styles.bestDishText}>
+                      <Text style={{ fontWeight: '700' }}>Não perca: </Text>
+                      {post.mustSee}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Chips: tipos de atrativo */}
+                {post.attractionTypes?.length > 0 && (
+                  <View style={styles.chipsRow}>
+                    {post.attractionTypes.map(t => <View key={t} style={styles.chip}><Text style={styles.chipText}>{t}</Text></View>)}
+                  </View>
+                )}
+
+                {/* Info da visita */}
+                <View style={styles.extraInfoBox}>
+                  {post.visitDuration && (
+                    <Text style={styles.extraInfoText}>
+                      <Ionicons name="time-outline" size={13} color={colors.textLight} /> <Text style={{ fontWeight: '700' }}>Tempo recomendado:</Text> {post.visitDuration}
+                    </Text>
+                  )}
+                  {post.bestTimeOfDay?.length > 0 && (
+                    <Text style={styles.extraInfoText}>
+                      <Text style={{ fontWeight: '700' }}>Melhor horário:</Text> {post.bestTimeOfDay.join(', ')}
+                    </Text>
+                  )}
+                  {post.crowdLevel && (
+                    <Text style={styles.extraInfoText}>
+                      <Text style={{ fontWeight: '700' }}>Lotação:</Text> {post.crowdLevel}
+                    </Text>
+                  )}
+                  {post.wheelchairAccess && (
+                    <Text style={styles.extraInfoText}>
+                      <Text style={{ fontWeight: '700' }}>♿ Cadeirante:</Text> {post.wheelchairAccess}
+                    </Text>
+                  )}
+                  {post.petsAllowed && (
+                    <Text style={styles.extraInfoText}>
+                      <Text style={{ fontWeight: '700' }}>🐾 Animais:</Text> {post.petsAllowed}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Would return badge */}
+                {post.wouldReturn && (
+                  <View style={[
+                    styles.wouldReturnBadge,
+                    post.wouldReturn === 'Sim' && { backgroundColor: '#D1FAE5' },
+                    post.wouldReturn === 'Talvez' && { backgroundColor: '#FEF9C3' },
+                    post.wouldReturn === 'Não' && { backgroundColor: '#FEE2E2' },
+                  ]}>
+                    <Text style={[
+                      styles.wouldReturnText,
+                      post.wouldReturn === 'Sim' && { color: '#065F46' },
+                      post.wouldReturn === 'Talvez' && { color: '#92400E' },
+                      post.wouldReturn === 'Não' && { color: '#991B1B' },
+                    ]}>
+                      {post.wouldReturn === 'Sim' ? '✓ Voltaria' : post.wouldReturn === 'Não' ? '✕ Não voltaria' : '~ Talvez voltasse'}
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* ── Campos legados (metadata) ── */}
             {(post.price || post.entryFee || post.hours || post.tips) && (
               <View style={styles.extraInfoBox}>
                 {post.price && <Text style={styles.extraInfoText}><Text style={{ fontWeight: '700' }}>Preço:</Text> {post.price}</Text>}
@@ -180,7 +275,6 @@ export default function PostCard({ post }) {
                 {post.tips && <Text style={styles.extraInfoText}><Text style={{ fontWeight: '700' }}>Dica:</Text> {post.tips}</Text>}
               </View>
             )}
-
 
             {/* Mini mapa estático */}
             <View style={styles.mapContainer}>

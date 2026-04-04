@@ -47,6 +47,19 @@ model Post {
   serviceRating  Int?
   ambienceRating Int?
   valueRating    Int?
+  visitDuration       String?
+  bestSeason          String[] @default([])
+  bestTimeOfDay       String[] @default([])
+  crowdLevel          String?
+  howToGetThere       String[] @default([])
+  wheelchairAccess    String?
+  petsAllowed         String?
+  touristTip          String?
+  mustSee             String?
+  attractionTypes     String[] @default([])
+  experienceRating    Int?
+  accessibilityRating Int?
+  conservationRating  Int?
   createdAt DateTime @default(now())
   listItems ListItem[]
 }

@@ -198,9 +198,13 @@ fastify.post('/posts', { preHandler: [authenticateToken] }, async (request, repl
     const {
         photoUrl, caption, rating, latitude, longitude,
         placeName, placeId, category, extras,
-        // Novos campos de restaurante
+        // Campos de restaurante
         mediaType, cuisineTypes, priceRange, occasions, mealTimes,
-        wouldReturn, bestDish, tip, foodRating, serviceRating, ambienceRating, valueRating
+        wouldReturn, bestDish, tip, foodRating, serviceRating, ambienceRating, valueRating,
+        // Campos de ponto turístico
+        visitDuration, bestSeason, bestTimeOfDay, crowdLevel, howToGetThere,
+        wheelchairAccess, petsAllowed, touristTip, mustSee, attractionTypes,
+        experienceRating, accessibilityRating, conservationRating
     } = request.body
 
     const post = await prisma.post.create({
@@ -216,6 +220,7 @@ fastify.post('/posts', { preHandler: [authenticateToken] }, async (request, repl
             category,
             metadata: extras || null,
             mediaType: mediaType || 'photo',
+            // Restaurante
             cuisineTypes: cuisineTypes || [],
             priceRange: priceRange || null,
             occasions: occasions || [],
@@ -227,6 +232,20 @@ fastify.post('/posts', { preHandler: [authenticateToken] }, async (request, repl
             serviceRating: serviceRating || null,
             ambienceRating: ambienceRating || null,
             valueRating: valueRating || null,
+            // Ponto turístico
+            visitDuration: visitDuration || null,
+            bestSeason: bestSeason || [],
+            bestTimeOfDay: bestTimeOfDay || [],
+            crowdLevel: crowdLevel || null,
+            howToGetThere: howToGetThere || [],
+            wheelchairAccess: wheelchairAccess || null,
+            petsAllowed: petsAllowed || null,
+            touristTip: touristTip || null,
+            mustSee: mustSee || null,
+            attractionTypes: attractionTypes || [],
+            experienceRating: experienceRating || null,
+            accessibilityRating: accessibilityRating || null,
+            conservationRating: conservationRating || null,
         }
     })
 

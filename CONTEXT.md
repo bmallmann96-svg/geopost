@@ -96,6 +96,14 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 - `POST /follows` — body: `{ followingId }`; cria relação de follow (requer token)
 - `DELETE /follows/:userId` — remove relação de follow com o userId (requer token)
 
+### Listas Curadas
+- `POST /lists` — cria lista; body: `{ title, description?, emoji?, color? }` (requer token)
+- `GET /lists/user/:userId` — listas de um usuário com contagem de itens e preview das 3 primeiras fotos (requer token)
+- `GET /lists/:listId` — detalhe completo da lista com todos os posts (id, photoUrl, latitude, longitude, placeName, rating, category) (requer token)
+- `POST /lists/:listId/items` — body: `{ postId }`; adiciona post à lista se pertencer ao usuário logado (requer token)
+- `DELETE /lists/:listId/items/:postId` — remove post da lista (requer token)
+- `DELETE /lists/:listId` — deleta lista inteira; só o dono pode (requer token)
+
 ## Estrutura da ExploreScreen
 A tela Explorar foi completamente refatorada com:
 - **Header fixo**: título "Explorar" + barra de busca com ícone de lupa (fundo #F5F5F5)
@@ -123,6 +131,7 @@ A tela Explorar foi completamente refatorada com:
 - [x] Fluxo de criação de restaurante: formulário rico com avaliações por dimensão, chips de culinária/ocasião/horário, faixa de preço, melhor pedido, dica e "Visitaria novamente"
 - [x] Suporte a vídeo no upload (NewPostScreen): seleção foto/vídeo, validação de 90s, preview com expo-av, upload para Cloudinary `/video/upload`
 - [x] PostCard expandido exibe campos ricos de restaurante: notas por dimensão, chips, badge de retorno, dica em itálico, melhor pedido
+- [x] Sistema de listas curadas: modelos List e ListItem no banco, 6 rotas de API, telas MyListsScreen/CreateListScreen/ListDetailScreen, aba Listas no perfil próprio e no perfil de outros usuários, pins coloridos por lista no mapa
 
 ## Observações técnicas
 - IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)
