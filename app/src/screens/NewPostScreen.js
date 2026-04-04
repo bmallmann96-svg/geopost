@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { Video } from 'expo-av';
 import Constants from 'expo-constants';
 import { colors } from '../theme/colors';
 
@@ -17,66 +21,87 @@ const POST_TYPES = [
 export default function NewPostScreen({ navigation }) {
   const [selectedType, setSelectedType] = useState('restaurant');
   const [place, setPlace] = useState('');
-  const [photoUrl, setPhotoUrl] = useState(null);
+  const [mediaUrl, setMediaUrl] = useState(null);
+  const [mediaType, setMediaType] = useState('photo'); // 'photo' | 'video'
+  const [videoRef, setVideoRef] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const pickImage = async () => {
+  const pickMedia = async (type) => {
+    const mediaTypeOption =
+      type === 'photo'
+        ? ImagePicker.MediaTypeOptions.Images
+        : ImagePicker.MediaTypeOptions.Videos;
+
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      mediaTypes: mediaTypeOption,
+      allowsEditing: type === 'photo',
       aspect: [4, 5],
       quality: 0.8,
     });
 
-    if (!result.canceled) {
-      uploadToCloudinary(result.assets[0]);
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+
+    if (type === 'video') {
+      const durationSec = asset.duration ? asset.duration / 1000 : 0;
+      if (durationSec > 90) {
+        Alert.alert('Vídeo muito longo', 'O vídeo selecionado passa de 90 segundos. Escolha um vídeo menor.');
+        return;
+      }
     }
+
+    setMediaType(type);
+    uploadMedia(asset, type);
   };
 
-  const uploadToCloudinary = async (asset) => {
+  const uploadMedia = async (asset, type) => {
     setIsUploading(true);
     try {
+      const resourceType = type === 'video' ? 'video' : 'image';
       const data = new FormData();
       data.append('file', {
         uri: asset.uri,
-        type: 'image/jpeg',
-        name: 'upload.jpg'
+        type: type === 'video' ? 'video/mp4' : 'image/jpeg',
+        name: type === 'video' ? 'upload.mp4' : 'upload.jpg',
       });
       data.append('upload_preset', UPLOAD_PRESET);
       data.append('cloud_name', CLOUD_NAME);
 
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: data,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data'
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
+        {
+          method: 'POST',
+          body: data,
+          headers: { Accept: 'application/json', 'Content-Type': 'multipart/form-data' },
         }
-      });
+      );
       const result = await res.json();
-      setPhotoUrl(result.secure_url);
+      setMediaUrl(result.secure_url);
     } catch (e) {
-      console.log('Error uploading image', e);
-      alert('Erro ao enviar imagem.');
+      console.log('Error uploading', e);
+      Alert.alert('Erro', 'Não foi possível enviar o arquivo.');
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleNext = () => {
-    if (!photoUrl) {
-      alert('Selecione uma foto primeiro!');
+    if (!mediaUrl) {
+      Alert.alert('Atenção', 'Selecione uma foto ou vídeo primeiro!');
       return;
     }
-    navigation.navigate('PostDetails', { type: selectedType, place, photoUrl });
+    navigation.navigate('PostDetails', {
+      type: selectedType,
+      place,
+      photoUrl: mediaUrl,
+      mediaType,
+    });
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="close" size={28} color={colors.text} />
@@ -86,21 +111,55 @@ export default function NewPostScreen({ navigation }) {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.photoContainer} onPress={pickImage} disabled={isUploading}>
+
+          {/* Área de mídia */}
+          <View style={styles.mediaBox}>
             {isUploading ? (
               <ActivityIndicator size="large" color={colors.primary} />
-            ) : photoUrl ? (
-              <Image source={{ uri: photoUrl }} style={{ width: '100%', height: '100%', borderRadius: 16 }} />
+            ) : mediaUrl && mediaType === 'video' ? (
+              <Video
+                ref={ref => setVideoRef(ref)}
+                source={{ uri: mediaUrl }}
+                style={styles.mediaPreview}
+                useNativeControls
+                resizeMode="cover"
+                isLooping={false}
+              />
+            ) : mediaUrl && mediaType === 'photo' ? (
+              <Image source={{ uri: mediaUrl }} style={styles.mediaPreview} />
             ) : (
-              <>
-                <View style={styles.photoIconWrapper}>
-                  <Ionicons name="image-outline" size={32} color={colors.textLight} />
-                </View>
-                <Text style={styles.photoText}>Selecionar foto da galeria</Text>
-              </>
+              <View style={styles.mediaPlaceholder}>
+                <Ionicons name="image-outline" size={36} color={colors.textLight} />
+                <Text style={styles.mediaPlaceholderText}>Selecione uma foto ou vídeo</Text>
+              </View>
             )}
-          </TouchableOpacity>
+          </View>
 
+          {/* Botões de seleção */}
+          <View style={styles.mediaPickerRow}>
+            <TouchableOpacity
+              style={[styles.mediaPickerBtn, mediaType === 'photo' && mediaUrl && styles.mediaPickerBtnActive]}
+              onPress={() => pickMedia('photo')}
+              disabled={isUploading}
+            >
+              <Ionicons name="image-outline" size={20} color={mediaType === 'photo' && mediaUrl ? colors.white : colors.primary} />
+              <Text style={[styles.mediaPickerBtnText, mediaType === 'photo' && mediaUrl && styles.mediaPickerBtnTextActive]}>
+                Foto
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.mediaPickerBtn, mediaType === 'video' && mediaUrl && styles.mediaPickerBtnActive]}
+              onPress={() => pickMedia('video')}
+              disabled={isUploading}
+            >
+              <Ionicons name="videocam-outline" size={20} color={mediaType === 'video' && mediaUrl ? colors.white : colors.primary} />
+              <Text style={[styles.mediaPickerBtnText, mediaType === 'video' && mediaUrl && styles.mediaPickerBtnTextActive]}>
+                Vídeo
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tipo de publicação */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tipo de publicação</Text>
             <View style={styles.typesContainer}>
@@ -113,38 +172,18 @@ export default function NewPostScreen({ navigation }) {
                     onPress={() => setSelectedType(type.id)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons 
-                      name={type.icon} 
-                      size={24} 
-                      color={isSelected ? colors.primary : colors.textLight} 
-                    />
-                    <Text style={[styles.typeText, isSelected && styles.typeTextSelected]}>
-                      {type.title}
-                    </Text>
+                    <Ionicons name={type.icon} size={24} color={isSelected ? colors.primary : colors.textLight} />
+                    <Text style={[styles.typeText, isSelected && styles.typeTextSelected]}>{type.title}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Onde foi?</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="search" size={20} color={colors.textLight} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Busque por um lugar..."
-                placeholderTextColor={colors.textLight}
-                value={place}
-                onChangeText={setPlace}
-              />
-            </View>
-          </View>
-
         </ScrollView>
 
         <View style={styles.footer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.nextButton, !selectedType && styles.nextButtonDisabled]}
             onPress={handleNext}
             disabled={!selectedType}
@@ -160,13 +199,8 @@ export default function NewPostScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flex: 1,
-  },
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -177,60 +211,49 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.surface,
   },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  photoContainer: {
+  backButton: { padding: 4 },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text },
+  scrollContent: { padding: 20 },
+
+  mediaBox: {
     backgroundColor: colors.surface,
     borderRadius: 16,
-    height: 200,
+    height: 220,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
     borderStyle: 'dashed',
-    marginBottom: 32,
-  },
-  photoIconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  photoText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.textLight,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.text,
     marginBottom: 16,
+    overflow: 'hidden',
   },
-  typesContainer: {
+  mediaPreview: { width: '100%', height: '100%' },
+  mediaPlaceholder: { alignItems: 'center' },
+  mediaPlaceholderText: { fontSize: 14, color: colors.textLight, marginTop: 10 },
+
+  mediaPickerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 32,
   },
+  mediaPickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  mediaPickerBtnActive: { backgroundColor: colors.primary },
+  mediaPickerBtnText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+  mediaPickerBtnTextActive: { color: colors.white },
+
+  section: { marginBottom: 32 },
+  sectionTitle: { fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 16 },
+  typesContainer: { flexDirection: 'row', justifyContent: 'space-between' },
   typeCard: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -242,38 +265,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  typeCardSelected: {
-    backgroundColor: '#FFF1E8', // Leve laranja de fundo
-    borderColor: colors.primary,
-  },
-  typeText: {
-    marginTop: 8,
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textLight,
-    textAlign: 'center',
-  },
-  typeTextSelected: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 52,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text,
-    height: '100%',
-  },
+  typeCardSelected: { backgroundColor: '#FFF1E8', borderColor: colors.primary },
+  typeText: { marginTop: 8, fontSize: 12, fontWeight: '500', color: colors.textLight, textAlign: 'center' },
+  typeTextSelected: { color: colors.primary, fontWeight: '600' },
+
   footer: {
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 0 : 20,
@@ -293,14 +288,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  nextButtonDisabled: {
-    backgroundColor: colors.textLight,
-    shadowOpacity: 0,
-  },
-  nextButtonText: {
-    color: colors.white,
-    fontSize: 17,
-    fontWeight: '600',
-    marginRight: 8,
-  },
+  nextButtonDisabled: { backgroundColor: colors.textLight, shadowOpacity: 0 },
+  nextButtonText: { color: colors.white, fontSize: 17, fontWeight: '600', marginRight: 8 },
 });

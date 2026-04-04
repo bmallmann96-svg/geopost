@@ -195,23 +195,41 @@ fastify.delete('/follows/:userId', { preHandler: [authenticateToken] }, async (r
 })
 
 fastify.post('/posts', { preHandler: [authenticateToken] }, async (request, reply) => {
-    const { photoUrl, caption, rating, latitude, longitude, placeName, placeId, category, extras } = request.body
-    
+    const {
+        photoUrl, caption, rating, latitude, longitude,
+        placeName, placeId, category, extras,
+        // Novos campos de restaurante
+        mediaType, cuisineTypes, priceRange, occasions, mealTimes,
+        wouldReturn, bestDish, tip, foodRating, serviceRating, ambienceRating, valueRating
+    } = request.body
+
     const post = await prisma.post.create({
         data: {
             userId: request.user.id,
             photoUrl,
             caption,
-            rating,
+            rating: rating || 0,
             latitude,
             longitude,
             placeName,
             placeId,
             category,
-            metadata: extras || null
+            metadata: extras || null,
+            mediaType: mediaType || 'photo',
+            cuisineTypes: cuisineTypes || [],
+            priceRange: priceRange || null,
+            occasions: occasions || [],
+            mealTimes: mealTimes || [],
+            wouldReturn: wouldReturn || null,
+            bestDish: bestDish || null,
+            tip: tip || null,
+            foodRating: foodRating || null,
+            serviceRating: serviceRating || null,
+            ambienceRating: ambienceRating || null,
+            valueRating: valueRating || null,
         }
     })
-    
+
     return post
 })
 

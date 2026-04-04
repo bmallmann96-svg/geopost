@@ -86,15 +86,101 @@ export default function PostCard({ post }) {
         {/* Área expandida */}
         {expanded && (
           <View style={styles.expandedContent}>
-            {/* Infos Extras */}
+
+            {/* ── Campos do restaurante ─────────── */}
+            {post.category === 'restaurant' && (
+              <>
+                {/* Avaliações por dimensão */}
+                {(post.foodRating || post.serviceRating || post.ambienceRating || post.valueRating) && (
+                  <View style={styles.extraInfoBox}>
+                    {[
+                      { label: 'Comida', value: post.foodRating },
+                      { label: 'Atendimento', value: post.serviceRating },
+                      { label: 'Ambiente', value: post.ambienceRating },
+                      { label: 'Custo-benefício', value: post.valueRating },
+                    ].filter(d => d.value).map(({ label, value }) => (
+                      <View key={label} style={styles.dimensionRow}>
+                        <Text style={styles.dimensionLabel}>{label}</Text>
+                        <StarsRating rating={value} size="small" />
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Faixa de preço */}
+                {post.priceRange && (
+                  <View style={styles.priceRow}>
+                    <Ionicons name="cash-outline" size={16} color={colors.primary} />
+                    <Text style={styles.priceText}>{post.priceRange}</Text>
+                  </View>
+                )}
+
+                {/* Best dish */}
+                {post.bestDish && (
+                  <View style={styles.bestDishRow}>
+                    <Ionicons name="restaurant-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                    <Text style={styles.bestDishText}>
+                      <Text style={{ fontWeight: '700' }}>Melhor pedido: </Text>
+                      {post.bestDish}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Dica em itálico */}
+                {post.tip && (
+                  <View style={styles.tipBox}>
+                    <Text style={styles.tipText}>"{post.tip}"</Text>
+                  </View>
+                )}
+
+                {/* Chips: cuisine, occasion, mealTime */}
+                {post.cuisineTypes?.length > 0 && (
+                  <View style={styles.chipsRow}>
+                    {post.cuisineTypes.map(c => <View key={c} style={styles.chip}><Text style={styles.chipText}>{c}</Text></View>)}
+                  </View>
+                )}
+                {post.occasions?.length > 0 && (
+                  <View style={styles.chipsRow}>
+                    {post.occasions.map(o => <View key={o} style={styles.chip}><Text style={styles.chipText}>{o}</Text></View>)}
+                  </View>
+                )}
+                {post.mealTimes?.length > 0 && (
+                  <View style={styles.chipsRow}>
+                    {post.mealTimes.map(m => <View key={m} style={styles.chip}><Text style={styles.chipText}>{m}</Text></View>)}
+                  </View>
+                )}
+
+                {/* Would return badge */}
+                {post.wouldReturn && (
+                  <View style={[
+                    styles.wouldReturnBadge,
+                    post.wouldReturn === 'Sim' && { backgroundColor: '#D1FAE5' },
+                    post.wouldReturn === 'Talvez' && { backgroundColor: '#FEF9C3' },
+                    post.wouldReturn === 'Não' && { backgroundColor: '#FEE2E2' },
+                  ]}>
+                    <Text style={[
+                      styles.wouldReturnText,
+                      post.wouldReturn === 'Sim' && { color: '#065F46' },
+                      post.wouldReturn === 'Talvez' && { color: '#92400E' },
+                      post.wouldReturn === 'Não' && { color: '#991B1B' },
+                    ]}>
+                      {post.wouldReturn === 'Sim' ? '✓ Voltaria' : post.wouldReturn === 'Não' ? '✕ Não voltaria' : '~ Talvez voltasse'}
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* ── Campos legados (tourist/moment) ── */}
             {(post.price || post.entryFee || post.hours || post.tips) && (
               <View style={styles.extraInfoBox}>
-                {post.price && <Text style={styles.extraInfoText}><Text style={{fontWeight:'700'}}>Preço:</Text> {post.price}</Text>}
-                {post.entryFee && <Text style={styles.extraInfoText}><Text style={{fontWeight:'700'}}>Entrada:</Text> {post.entryFee}</Text>}
-                {post.hours && <Text style={styles.extraInfoText}><Text style={{fontWeight:'700'}}>Horários:</Text> {post.hours}</Text>}
-                {post.tips && <Text style={styles.extraInfoText}><Text style={{fontWeight:'700'}}>Dica:</Text> {post.tips}</Text>}
+                {post.price && <Text style={styles.extraInfoText}><Text style={{ fontWeight: '700' }}>Preço:</Text> {post.price}</Text>}
+                {post.entryFee && <Text style={styles.extraInfoText}><Text style={{ fontWeight: '700' }}>Entrada:</Text> {post.entryFee}</Text>}
+                {post.hours && <Text style={styles.extraInfoText}><Text style={{ fontWeight: '700' }}>Horários:</Text> {post.hours}</Text>}
+                {post.tips && <Text style={styles.extraInfoText}><Text style={{ fontWeight: '700' }}>Dica:</Text> {post.tips}</Text>}
               </View>
             )}
+
 
             {/* Mini mapa estático */}
             <View style={styles.mapContainer}>
@@ -323,5 +409,87 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
     marginRight: 8,
+  },
+  // ── Novos estilos de restaurante ──────────────────────
+  dimensionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  dimensionLabel: {
+    fontSize: 13,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.primary,
+    marginLeft: 6,
+    letterSpacing: 1,
+  },
+  bestDishRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  bestDishText: {
+    fontSize: 13,
+    color: colors.text,
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  tipBox: {
+    backgroundColor: '#FFF8F3',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
+    marginBottom: 10,
+  },
+  tipText: {
+    fontStyle: 'italic',
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 20,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  chip: {
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  chipText: {
+    fontSize: 12,
+    color: colors.textLight,
+    fontWeight: '500',
+  },
+  wouldReturnBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  wouldReturnText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

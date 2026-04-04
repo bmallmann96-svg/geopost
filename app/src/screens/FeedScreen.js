@@ -27,15 +27,29 @@ export default function FeedScreen() {
           category: p.category,
           rating: p.rating,
           caption: p.caption,
-          priority: p.priority, // 1 = seguindo, 2 = outros
+          priority: p.priority,
           likes: Math.floor(Math.random() * 500),
           comments: Math.floor(Math.random() * 50),
+          // Campos legados (tourist/moment via metadata)
           price: p.metadata?.price,
           hours: p.metadata?.hours,
           tips: p.metadata?.tips,
           entryFee: p.metadata?.entryFee,
           lat: p.latitude,
           lng: p.longitude,
+          // Novos campos de restaurante
+          mediaType: p.mediaType,
+          cuisineTypes: p.cuisineTypes,
+          priceRange: p.priceRange,
+          occasions: p.occasions,
+          mealTimes: p.mealTimes,
+          wouldReturn: p.wouldReturn,
+          bestDish: p.bestDish,
+          tip: p.tip,
+          foodRating: p.foodRating,
+          serviceRating: p.serviceRating,
+          ambienceRating: p.ambienceRating,
+          valueRating: p.valueRating,
         }));
         setPosts(formattedPosts);
       }

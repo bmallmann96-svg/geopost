@@ -34,6 +34,18 @@ model Post {
   placeId   String
   category  String
   metadata  Json?
+  mediaType      String   @default("photo")
+  cuisineTypes   String[] @default([])
+  priceRange     String?
+  occasions      String[] @default([])
+  mealTimes      String[] @default([])
+  wouldReturn    String?
+  bestDish       String?
+  tip            String?
+  foodRating     Int?
+  serviceRating  Int?
+  ambienceRating Int?
+  valueRating    Int?
   createdAt DateTime @default(now())
 }
 
