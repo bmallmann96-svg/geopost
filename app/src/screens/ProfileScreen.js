@@ -1,41 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, SafeAreaView, Platform, StatusBar, Dimensions, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, Image, TouchableOpacity, FlatList,
+  SafeAreaView, Platform, StatusBar, Dimensions, ActivityIndicator, ScrollView
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 
+const API = 'https://geopost-production.up.railway.app';
 const { width } = Dimensions.get('window');
 
 export default function ProfileScreen({ navigation }) {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState('map');
   const [posts, setPosts] = useState([]);
+  const [stats, setStats] = useState({ followersCount: 0, followingCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchUserPosts();
-    }
-  }, [user]);
-
-  const fetchUserPosts = async () => {
+  const fetchData = useCallback(async () => {
+    if (!user?.id) return;
     try {
       const token = await AsyncStorage.getItem('@token');
-      const res = await fetch(`https://geopost-production.up.railway.app/posts/user/${user.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setPosts(data);
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [postsRes, statsRes] = await Promise.all([
+        fetch(`${API}/posts/user/${user.id}`, { headers }),
+        fetch(`${API}/users/${user.id}`, { headers }),
+      ]);
+
+      if (postsRes.ok) setPosts(await postsRes.json());
+      if (statsRes.ok) {
+        const s = await statsRes.json();
+        setStats({ followersCount: s.followersCount, followingCount: s.followingCount });
       }
     } catch (e) {
-      console.log('Error fetching user posts', e);
+      console.log('Error fetching profile data', e);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  // Recarrega sempre que a tela volta ao foco (ex: após seguir alguém)
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const userInitials = user?.name ? user.name.substring(0, 1).toUpperCase() : 'U';
 
@@ -63,12 +76,12 @@ export default function ProfileScreen({ navigation }) {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{0}</Text>
+            <Text style={styles.statNumber}>{stats.followersCount}</Text>
             <Text style={styles.statLabel}>Seguidores</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{0}</Text>
+            <Text style={styles.statNumber}>{stats.followingCount}</Text>
             <Text style={styles.statLabel}>Seguindo</Text>
           </View>
         </View>
@@ -86,13 +99,13 @@ export default function ProfileScreen({ navigation }) {
 
   const renderSwitchers = () => (
     <View style={styles.switcherContainer}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.switchButton, viewMode === 'map' && styles.switchButtonActive]}
         onPress={() => setViewMode('map')}
       >
         <Ionicons name="map-outline" size={24} color={viewMode === 'map' ? colors.primary : colors.textLight} />
       </TouchableOpacity>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.switchButton, viewMode === 'grid' && styles.switchButtonActive]}
         onPress={() => setViewMode('grid')}
       >
@@ -128,7 +141,7 @@ export default function ProfileScreen({ navigation }) {
         }}
       >
         {posts.map(pin => (
-          <Marker 
+          <Marker
             key={pin.id}
             coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
           >

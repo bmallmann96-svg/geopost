@@ -45,7 +45,7 @@ function StarsMini({ rating }) {
   );
 }
 
-export default function ExploreScreen() {
+export default function ExploreScreen({ navigation }) {
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tudo');
@@ -145,16 +145,22 @@ export default function ExploreScreen() {
     const initial = item.name ? item.name.charAt(0).toUpperCase() : '?';
     return (
       <View style={styles.userItem}>
-        <View style={styles.userAvatar}>
-          {item.avatar
-            ? <Image source={{ uri: item.avatar }} style={styles.userAvatarImage} />
-            : <Text style={styles.userAvatarInitial}>{initial}</Text>
-          }
-        </View>
-        <View style={styles.userInfo}>
-          <Text style={styles.userName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.userUsername} numberOfLines={1}>@{item.username}</Text>
-        </View>
+        <TouchableOpacity
+          style={styles.userItemLeft}
+          onPress={() => navigation.navigate('UserProfile', { userId: item.id })}
+          activeOpacity={0.7}
+        >
+          <View style={styles.userAvatar}>
+            {item.avatar
+              ? <Image source={{ uri: item.avatar }} style={styles.userAvatarImage} />
+              : <Text style={styles.userAvatarInitial}>{initial}</Text>
+            }
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.userUsername} numberOfLines={1}>@{item.username}</Text>
+          </View>
+        </TouchableOpacity>
         {item.isFollowing ? (
           <TouchableOpacity style={styles.btnFollowing} onPress={() => handleUnfollow(item.id)}>
             <Text style={styles.btnFollowingText}>Seguindo</Text>
@@ -170,10 +176,12 @@ export default function ExploreScreen() {
 
   const renderGridItem = ({ item }) => (
     <View style={styles.gridCard}>
-      <Image source={{ uri: item.imageUrl }} style={styles.gridImage} />
+      <View style={styles.gridImageWrapper}>
+        <Image source={{ uri: item.imageUrl }} style={styles.gridImage} />
+      </View>
       <View style={styles.gridInfo}>
-        <Text style={styles.gridPlaceName} numberOfLines={1}>{item.placeName}</Text>
-        <Text style={styles.gridCategory} numberOfLines={1}>{item.category}</Text>
+        <Text style={styles.gridPlaceName} numberOfLines={2}>{item.placeName}</Text>
+        <Text style={styles.gridCategory}>{item.category}</Text>
         <StarsMini rating={item.rating} />
       </View>
     </View>
@@ -343,17 +351,18 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   pillsScroll: {
-    maxHeight: 52,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   pillsContent: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignItems: 'center',
-    gap: 8,
+    flexDirection: 'row',
   },
   pill: {
     paddingHorizontal: 16,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#F5F5F5',
     marginRight: 8,
@@ -398,25 +407,38 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     marginBottom: 16,
     borderRadius: 12,
-    overflow: 'hidden',
     backgroundColor: '#F5F5F5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  gridImageWrapper: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: 'hidden',
   },
   gridImage: {
     width: '100%',
     height: CARD_WIDTH,
   },
   gridInfo: {
-    padding: 8,
+    padding: 10,
+    paddingBottom: 12,
+    minHeight: 64,
   },
   gridPlaceName: {
     fontSize: 13,
     fontWeight: '600',
     color: '#1C1C1E',
+    flexShrink: 1,
   },
   gridCategory: {
     fontSize: 11,
     color: '#8E8E93',
-    marginTop: 1,
+    marginTop: 2,
+    flexShrink: 1,
   },
   // User list
   userItem: {
@@ -424,6 +446,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  userItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
   },
   userAvatar: {
     width: 46,

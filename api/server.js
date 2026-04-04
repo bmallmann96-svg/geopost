@@ -121,6 +121,45 @@ fastify.get('/users/search', { preHandler: [authenticateToken] }, async (request
     }))
 })
 
+fastify.get('/users/:userId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { userId } = request.params
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            bio: true,
+            _count: {
+                select: {
+                    posts: true,
+                    followers: true,
+                    following: true,
+                }
+            },
+            followers: {
+                where: { followerId: request.user.id }
+            }
+        }
+    })
+
+    if (!user) return reply.status(404).send({ error: 'User not found' })
+
+    return {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        avatar: user.avatar,
+        bio: user.bio,
+        postsCount: user._count.posts,
+        followersCount: user._count.followers,
+        followingCount: user._count.following,
+        isFollowing: user.followers.length > 0
+    }
+})
+
 fastify.post('/follows', { preHandler: [authenticateToken] }, async (request, reply) => {
     const { followingId } = request.body
     
