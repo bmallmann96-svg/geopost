@@ -70,6 +70,7 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 - /app/src/screens/FeedScreen.js — tela de feed com Story Bar
 - /app/src/screens/ExploreScreen.js — tela de explorar em formato TikTok vertical
 - /app/src/screens/ProfileScreen.js — Perfil completo (Modo Mapa interativo e Modo Grade em tabs)
+- /app/src/screens/SettingsScreen.js — Opções da conta e logout (Acessível via perfil)
 - /app/src/screens/StoryViewerScreen.js — Visualizador imersivo e temporizado
 - /app/src/screens/StoryCreatorScreen.js — Mock de câmera flexível e marcação de lugar
 - /app/src/theme/colors.js — cores do app

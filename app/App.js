@@ -11,6 +11,7 @@ import ExploreScreen from './src/screens/ExploreScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import NewPostScreen from './src/screens/NewPostScreen'
 import PostDetailsScreen from './src/screens/PostDetailsScreen'
+import SettingsScreen from './src/screens/SettingsScreen'
 import LoginScreen from './src/screens/LoginScreen'
 import RegisterScreen from './src/screens/RegisterScreen'
 import StoryViewerScreen from './src/screens/StoryViewerScreen'
@@ -119,6 +120,7 @@ function MainAppNavigator() {
   return (
     <MainStack.Navigator screenOptions={{ headerShown: false, presentation: 'fullScreenModal' }}>
       <MainStack.Screen name="Tabs" component={MainTabs} options={{ presentation: 'card' }} />
+      <MainStack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'card' }} />
       <MainStack.Screen name="StoryViewer" component={StoryViewerScreen} />
       <MainStack.Screen name="StoryCreator" component={StoryCreatorScreen} />
     </MainStack.Navigator>

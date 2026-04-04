@@ -8,7 +8,7 @@ import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const { width } = Dimensions.get('window');
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState('map');
   const [posts, setPosts] = useState([]);
@@ -41,6 +41,12 @@ export default function ProfileScreen() {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
+      <View style={{ width: '100%', alignItems: 'flex-end', marginBottom: 8, paddingHorizontal: 4 }}>
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+          <Ionicons name="settings-outline" size={26} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.profileInfoRow}>
         <View style={styles.avatarContainer}>
           {user?.avatar ? (
