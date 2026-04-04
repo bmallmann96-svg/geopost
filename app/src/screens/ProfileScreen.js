@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   const fetchUserPosts = async () => {
     try {
       const token = await AsyncStorage.getItem('@token');
-      const res = await fetch(`http://192.168.0.15:3000/posts/user/${user.id}`, {
+      const res = await fetch(`https://geopost-production.up.railway.app/posts/user/${user.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

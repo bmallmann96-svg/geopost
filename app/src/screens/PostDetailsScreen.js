@@ -59,7 +59,7 @@ export default function PostDetailsScreen({ route, navigation }) {
       const token = await AsyncStorage.getItem('@token');
       const extras = { price, hours, entryFee, tips };
       
-      const res = await fetch('http://192.168.0.15:3000/posts', {
+      const res = await fetch('https://geopost-production.up.railway.app/posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.0.15:3000';
+const API_URL = 'https://geopost-production.up.railway.app';
 
 const AuthContext = createContext({});
 
@@ -43,9 +43,9 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      
+
       if (!res.ok) throw new Error(data.error || 'Erro ao realizar login');
-      
+
       await AsyncStorage.setItem('@token', data.token);
       setUser(data.user);
     } catch (error) {
@@ -64,9 +64,9 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ name, username, email, password })
       });
       const data = await res.json();
-      
+
       if (!res.ok) throw new Error(data.error || 'Erro no cadastro');
-      
+
       await AsyncStorage.setItem('@token', data.token);
       setUser(data.user);
     } catch (error) {

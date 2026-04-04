@@ -14,7 +14,7 @@ export default function FeedScreen() {
   const fetchPosts = async () => {
     try {
       const token = await AsyncStorage.getItem('@token');
-      const res = await fetch('http://192.168.0.15:3000/posts/feed', {
+      const res = await fetch('https://geopost-production.up.railway.app/posts/feed', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

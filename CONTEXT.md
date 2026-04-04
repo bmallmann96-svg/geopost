@@ -5,12 +5,15 @@
 - Backend: Node.js + Fastify + Prisma (pasta /api)
 - Banco: PostgreSQL + PostGIS + Redis
 - Infra local: Docker (pasta /infra)
+- **Ambiente de produção: Railway** → `https://geopost-production.up.railway.app`
 
 ## Como rodar o projeto
 1. Abrir Docker Desktop
 2. Terminal 1: `cd infra` → `docker-compose up -d`
 3. Terminal 2: `cd api` → `node server.js`
 4. Terminal 3: `cd app` → `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.0.15"; npx expo start --clear`
+
+> **Nota:** O app mobile aponta para a API de **produção no Railway** (`https://geopost-production.up.railway.app`). O servidor local (`node server.js`) é usado apenas para desenvolvimento/debug da API.
 
 ## O que está feito
 - Ambiente completo configurado no Windows
@@ -82,9 +85,11 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 - [x] Feed listando PostCards formatados estilo rede social (Consumindo BD Real via API)
 - [x] Mapa de exploração e TikTok style Explore
 - [x] UI Completa de Perfil com Maps View global e Grid View populados com API (GET /posts/user/:id)
+- [x] Migração de todas as URLs da API de `http://192.168.0.15:3000` para `https://geopost-production.up.railway.app` (produção Railway)
 
 ## Observações técnicas
-- IP da máquina na rede local: 192.168.0.15
+- IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)
+- **URL da API de produção:** `https://geopost-production.up.railway.app`
 - Sempre usar $env: no PowerShell (não use SET como no CMD)
 - Todo arquivo React Native precisa ter `import React from 'react'` no topo
 - Prisma versão 5.22.0 (não usar v7, tem bugs)
