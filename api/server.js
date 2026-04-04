@@ -216,8 +216,19 @@ fastify.post('/posts', { preHandler: [authenticateToken] }, async (request, repl
 })
 
 fastify.get('/posts/feed', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    // Busca IDs de quem o usuário segue
+    const follows = await prisma.follow.findMany({
+        where: { followerId: request.user.id },
+        select: { followingId: true }
+    })
+    const followingIds = follows.map(f => f.followingId)
+
     const posts = await prisma.post.findMany({
-        take: 20,
+        where: { createdAt: { gte: thirtyDaysAgo } },
+        take: 100, // busca mais para poder ordenar e depois cortar
         orderBy: { createdAt: 'desc' },
         include: {
             user: {
@@ -225,7 +236,17 @@ fastify.get('/posts/feed', { preHandler: [authenticateToken] }, async (request, 
             }
         }
     })
-    return posts
+
+    // Adiciona campo priority e ordena: seguidores primeiro, depois recentes
+    const sorted = posts
+        .map(p => ({
+            ...p,
+            priority: followingIds.includes(p.userId) ? 1 : 2
+        }))
+        .sort((a, b) => a.priority - b.priority || b.createdAt - a.createdAt)
+        .slice(0, 20)
+
+    return sorted
 })
 
 fastify.get('/posts/user/:userId', { preHandler: [authenticateToken] }, async (request, reply) => {

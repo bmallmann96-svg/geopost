@@ -19,7 +19,6 @@ export default function FeedScreen() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Mapeia para a estrutura esperada pelo PostCard
         const formattedPosts = data.map(p => ({
           id: p.id,
           user: p.user,
@@ -28,8 +27,9 @@ export default function FeedScreen() {
           category: p.category,
           rating: p.rating,
           caption: p.caption,
-          likes: Math.floor(Math.random() * 500), // mock metrics
-          comments: Math.floor(Math.random() * 50), // mock metrics
+          priority: p.priority, // 1 = seguindo, 2 = outros
+          likes: Math.floor(Math.random() * 500),
+          comments: Math.floor(Math.random() * 50),
           price: p.metadata?.price,
           hours: p.metadata?.hours,
           tips: p.metadata?.tips,
@@ -56,6 +56,31 @@ export default function FeedScreen() {
     setRefreshing(false);
   };
 
+  // Injeta item separador entre posts de seguidores e outros
+  const feedWithSeparator = React.useMemo(() => {
+    const firstOtherIdx = posts.findIndex(p => p.priority === 2);
+    if (firstOtherIdx <= 0) return posts; // nenhum post de seguindo, ou todos são outros -> sem separador
+
+    return [
+      ...posts.slice(0, firstOtherIdx),
+      { id: '__separator__', isSeparator: true },
+      ...posts.slice(firstOtherIdx),
+    ];
+  }, [posts]);
+
+  const renderItem = ({ item }) => {
+    if (item.isSeparator) {
+      return (
+        <View style={styles.separator}>
+          <View style={styles.separatorLine} />
+          <Text style={styles.separatorText}>Outros posts</Text>
+          <View style={styles.separatorLine} />
+        </View>
+      );
+    }
+    return <PostCard post={item} />;
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -73,10 +98,10 @@ export default function FeedScreen() {
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={feedWithSeparator}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={<StoryBar />}
-          renderItem={({ item }) => <PostCard post={item} />}
+          renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
@@ -112,6 +137,25 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
-    backgroundColor: colors.surface, 
+    backgroundColor: colors.surface,
+  },
+  separator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: colors.surface,
+  },
+  separatorLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#C7C7CC',
+  },
+  separatorText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8E8E93',
+    marginHorizontal: 10,
+    letterSpacing: 0.3,
   },
 });

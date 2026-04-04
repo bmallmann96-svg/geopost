@@ -87,11 +87,12 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 
 ### Posts
 - `POST /posts` — cria novo post (requer token)
-- `GET /posts/feed` — feed de todos os posts (requer token)
+- `GET /posts/feed` — feed inteligente dos últimos 30 dias: posts de usuários seguidos aparecem primeiro (priority=1), depois os demais (priority=2); ordenado por prioridade e recente; limite de 20 (requer token)
 - `GET /posts/user/:userId` — posts de um usuário específico (requer token)
 
 ### Usuários & Social
 - `GET /users/search?q=termo` — busca usuários por nome/username; exclui o próprio usuário; retorna `isFollowing` (requer token)
+- `GET /users/:userId` — perfil completo com `postsCount`, `followersCount`, `followingCount`, `isFollowing` (requer token)
 - `POST /follows` — body: `{ followingId }`; cria relação de follow (requer token)
 - `DELETE /follows/:userId` — remove relação de follow com o userId (requer token)
 
@@ -117,6 +118,8 @@ A tela Explorar foi completamente refatorada com:
 - [x] Migração de todas as URLs da API de `http://192.168.0.15:3000` para `https://geopost-production.up.railway.app` (produção Railway)
 - [x] ExploreScreen refatorada: busca de usuários, follow/unfollow, filtros pill, modo mapa e grade
 - [x] Tela de Configurações com seções Conta, Suporte e logout
+- [x] Perfil de outro usuário (UserProfileScreen) com contadores reais e botão Seguir/Seguindo
+- [x] Feed inteligente: posts de seguidos aparecem primeiro; separador visual "Outros posts" entre os grupos
 
 ## Observações técnicas
 - IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)
