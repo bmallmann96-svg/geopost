@@ -37,7 +37,7 @@ export default function EditListScreen({ route, navigation }) {
   
   const [userPosts, setUserPosts] = useState([]);
   const [selectedPosts, setSelectedPosts] = useState([]);
-  const [initialSelected, setInitialSelected] = useState([]);
+  const [originalPostIds, setOriginalPostIds] = useState([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   
   const [isCreating, setIsCreating] = useState(false);
@@ -70,7 +70,7 @@ export default function EditListScreen({ route, navigation }) {
         const listData = await listRes.json();
         const ids = listData.posts ? listData.posts.map(p => p.id) : [];
         setSelectedPosts(ids);
-        setInitialSelected(ids);
+        setOriginalPostIds(ids);
       }
     } catch (e) {
       console.log('Error fetching data', e);
@@ -108,7 +108,7 @@ export default function EditListScreen({ route, navigation }) {
       if (!updateRes.ok) throw new Error('Erro ao atualizar lista');
 
       // Adicionar posts novos
-      const postsToAdd = selectedPosts.filter(id => !initialSelected.includes(id));
+      const postsToAdd = selectedPosts.filter(id => !originalPostIds.includes(id));
       console.log('Adicionando posts:', postsToAdd);
       await Promise.all(
         postsToAdd.map(async postId => {
@@ -122,7 +122,7 @@ export default function EditListScreen({ route, navigation }) {
       );
 
       // Remover posts desmarcados
-      const postsToRemove = initialSelected.filter(id => !selectedPosts.includes(id));
+      const postsToRemove = originalPostIds.filter(id => !selectedPosts.includes(id));
       console.log('Removendo posts:', postsToRemove);
       await Promise.all(
         postsToRemove.map(async postId => {
