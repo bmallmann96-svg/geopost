@@ -11,7 +11,12 @@ import { useAuth } from '../context/AuthContext';
 
 const API = 'https://geopost-production.up.railway.app';
 
-const EMOJI_OPTIONS = ['🍕', '🍣', '🍺', '🌮', '🥗', '🎭', '🏛️', '🌿', '🛍️', '☕', '🏨', '🎵', '📍', '🌅', '🏖️', '🎨'];
+const EMOJI_CATEGORIES = [
+  { label: 'Comida e bebida', emojis: ['🍕','🍣','🍺','🌮','🥗','🍔','🍜','🍱','🥩','🍷','🍸','🫕','🥘','🍝','🧆','🫙','🍰','🧁','🍫'] },
+  { label: 'Viagem e lugares', emojis: ['✈️','🗺️','🏖️','🏔️','🌍','🗼','🏰','🌅','🏕️','⛵','🚂','🎡','🗽','🏯','🌋','🛳️'] },
+  { label: 'Atividades', emojis: ['🎭','🎵','🏃','🚴','🧗','🤿','🎯','🎲','🎬','🎨','🏋️','🧘','⚽','🎾','🏄'] },
+  { label: 'Natureza', emojis: ['🌿','🌊','🌸','🌲','🦋','🐠','🌺','🍃','🌻','🏞️'] },
+];
 const COLOR_OPTIONS = [
   { value: '#F97316', label: 'Laranja' },
   { value: '#7F77DD', label: 'Roxo' },
@@ -30,7 +35,55 @@ export default function EditListScreen({ route, navigation }) {
   const [selectedEmoji, setSelectedEmoji] = useState(listEmoji || '📍');
   const [selectedColor, setSelectedColor] = useState(listColor || '#F97316');
   
+  const [userPosts, setUserPosts] = useState([]);
+  const [selectedPosts, setSelectedPosts] = useState([]);
+  const [initialSelected, setInitialSelected] = useState([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  
   const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('@token');
+      // 1. Fetch user posts
+      const postsRes = await fetch(`${API}/posts/user/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (postsRes.ok) {
+        setUserPosts(await postsRes.json());
+      }
+      
+      // 2. Fetch list items to pre-fill checkboxes
+      const listRes = await fetch(`${API}/lists/${listId}`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+      });
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const ids = listData.posts ? listData.posts.map(p => p.id) : [];
+        setSelectedPosts(ids);
+        setInitialSelected(ids);
+      }
+    } catch (e) {
+      console.log('Error fetching data', e);
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  };
+
+  const togglePost = (postId) => {
+    setSelectedPosts(prev =>
+      prev.includes(postId) ? prev.filter(id => id !== postId) : [...prev, postId]
+    );
+  };
 
   const handleUpdate = async () => {
     if (!title.trim()) {
@@ -53,6 +106,33 @@ export default function EditListScreen({ route, navigation }) {
         }),
       });
       if (!updateRes.ok) throw new Error('Erro ao atualizar lista');
+
+      // Adicionar posts novos
+      const postsToAdd = selectedPosts.filter(id => !initialSelected.includes(id));
+      console.log('Adicionando posts:', postsToAdd);
+      await Promise.all(
+        postsToAdd.map(async postId => {
+          const res = await fetch(`${API}/lists/${listId}/items`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ postId }),
+          });
+          if (!res.ok) console.log('Erro ao add:', postId, await res.text());
+        })
+      );
+
+      // Remover posts desmarcados
+      const postsToRemove = initialSelected.filter(id => !selectedPosts.includes(id));
+      console.log('Removendo posts:', postsToRemove);
+      await Promise.all(
+        postsToRemove.map(async postId => {
+          const res = await fetch(`${API}/lists/${listId}/items/${postId}`, {
+            method: 'DELETE',
+            headers,
+          });
+          if (!res.ok) console.log('Erro ao remover:', postId, await res.text());
+        })
+      );
 
       navigation.goBack();
       // Em um app real usaríamos Events ou Redux para atualizar a tela anterior
@@ -83,7 +163,7 @@ export default function EditListScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* Título */}
         <View style={styles.section}>
@@ -115,17 +195,22 @@ export default function EditListScreen({ route, navigation }) {
         {/* Emoji */}
         <View style={styles.section}>
           <Text style={styles.label}>Emoji</Text>
-          <View style={styles.emojiGrid}>
-            {EMOJI_OPTIONS.map(e => (
-              <TouchableOpacity
-                key={e}
-                style={[styles.emojiBtn, selectedEmoji === e && styles.emojiBtnSelected]}
-                onPress={() => setSelectedEmoji(e)}
-              >
-                <Text style={styles.emojiText}>{e}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {EMOJI_CATEGORIES.map(category => (
+            <View key={category.label} style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, color: '#8E8E93', marginBottom: 6 }}>{category.label}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                {category.emojis.map(e => (
+                  <TouchableOpacity
+                    key={e}
+                    style={[styles.emojiBtn, selectedEmoji === e && styles.emojiBtnSelected]}
+                    onPress={() => setSelectedEmoji(e)}
+                  >
+                    <Text style={styles.emojiText}>{e}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ))}
         </View>
 
         {/* Cor */}
@@ -140,6 +225,37 @@ export default function EditListScreen({ route, navigation }) {
               />
             ))}
           </View>
+        </View>
+
+        {/* Posts do usuário */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Editar lugares ({selectedPosts.length} selecionados)</Text>
+          {isLoadingPosts ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />
+          ) : userPosts.length === 0 ? (
+            <Text style={styles.noPostsText}>Você não tem posts para gerenciar.</Text>
+          ) : (
+            userPosts.map(post => {
+              const isSelected = selectedPosts.includes(post.id);
+              return (
+                <TouchableOpacity
+                  key={post.id}
+                  style={[styles.postItem, isSelected && styles.postItemSelected]}
+                  onPress={() => togglePost(post.id)}
+                  activeOpacity={0.7}
+                >
+                  <Image source={{ uri: post.photoUrl || post.imageUrl }} style={styles.postThumb} />
+                  <View style={styles.postInfo}>
+                    <Text style={styles.postName} numberOfLines={1}>{post.placeName}</Text>
+                    <Text style={styles.postCategory}>{post.category || 'Momento'}</Text>
+                  </View>
+                  <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                    {isSelected && <Ionicons name="checkmark" size={16} color={colors.white} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

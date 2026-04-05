@@ -297,16 +297,15 @@ export default function ExploreScreen({ navigation }) {
             ) : (
               <MapView provider={PROVIDER_GOOGLE} style={styles.map} region={mapRegion} showsUserLocation>
                 {mapPins.map(pin => (
-                  <Marker key={pin.id} coordinate={{ latitude: pin.latitude, longitude: pin.longitude }} title={pin.name}>
+                  <Marker 
+                    key={pin.id} 
+                    coordinate={{ latitude: pin.latitude, longitude: pin.longitude }} 
+                    title={pin.name}
+                    onPress={() => navigation.navigate('SinglePost', { postId: pin.id })}
+                  >
                     <View style={styles.pinDot}>
                       <Ionicons name="location" size={30} color={colors.primary} />
                     </View>
-                    <Callout tooltip onPress={() => navigation.navigate('SinglePost', { postId: pin.id })}>
-                       <View style={{ backgroundColor: 'white', padding: 8, borderRadius: 8 }}>
-                          <Text style={{ fontWeight: 'bold' }}>{pin.name}</Text>
-                          <Text style={{ fontSize: 12, color: colors.textLight }}>Toque para abrir</Text>
-                       </View>
-                    </Callout>
                   </Marker>
                 ))}
               </MapView>

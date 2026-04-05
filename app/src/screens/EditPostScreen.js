@@ -8,8 +8,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import Constants from 'expo-constants';
 
 const API = 'https://geopost-production.up.railway.app';
+const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.ios?.config?.googleMapsApiKey || 'AIzaSyA5u0yMtmI3V23lw177o-889C04vC4JIGI';
 
 // ── Componentes auxiliares ──────────────────────────────────
 
@@ -85,7 +88,12 @@ export default function EditPostScreen({ route, navigation }) {
   const type = post.category || 'moment';
   const photoUrl = post.imageUrl;
   const mediaType = post.mediaType || 'photo';
-  const place = post.placeName;
+
+  const [placeName, setPlaceName] = useState(post.placeName || '');
+  const [placeId, setPlaceId] = useState(post.placeId || '');
+  const [latitude, setLatitude] = useState(post.latitude || null);
+  const [longitude, setLongitude] = useState(post.longitude || null);
+  const [listVisible, setListVisible] = useState(false);
 
   const [caption, setCaption] = useState(post.caption || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,20 +154,20 @@ export default function EditPostScreen({ route, navigation }) {
 
       if (type === 'restaurant') {
         body = {
-          caption, rating,
+          caption, rating, placeName, placeId, latitude, longitude,
           cuisineTypes, priceRange, occasions, mealTimes, wouldReturn,
           bestDish, tip, foodRating, serviceRating, ambienceRating, valueRating,
         };
       } else if (type === 'tourist') {
         body = {
-          caption, rating,
+          caption, rating, placeName, placeId, latitude, longitude,
           attractionTypes, visitDuration, bestSeason, bestTimeOfDay, crowdLevel,
           howToGetThere, wheelchairAccess, petsAllowed, touristTip, mustSee,
           experienceRating, accessibilityRating: accessibilityRating, conservationRating,
           valueRating: valueRatingT, wouldReturn,
         };
       } else {
-        body = { caption, rating };
+        body = { caption, rating, placeName, placeId, latitude, longitude };
       }
 
       const res = await fetch(`${API}/posts/${post.id}`, {
@@ -381,18 +389,61 @@ export default function EditPostScreen({ route, navigation }) {
           <View style={{ width: 28 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Mídia não editável */}
-          <View style={{ marginBottom: 20, alignItems: 'center' }}>
+          <View style={{ marginBottom: 20, alignItems: 'center', zIndex: 1 }}>
             {photoUrl && <Image source={{ uri: photoUrl }} style={{ width: '100%', height: 200, borderRadius: 12, opacity: 0.8 }} />}
             <Text style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', padding: 4, borderRadius: 4, fontSize: 12 }}>Mídia original</Text>
           </View>
 
           {errorMsg ? (
-            <Text style={{ color: 'red', textAlign: 'center', marginBottom: 16, fontWeight: '500' }}>{errorMsg}</Text>
+            <Text style={{ color: 'red', textAlign: 'center', marginBottom: 16, fontWeight: '500', zIndex: 1 }}>{errorMsg}</Text>
           ) : null}
 
-          <View style={styles.section}>
+          {/* Busca de Local (Georreferenciamento) */}
+          <View style={[styles.section, { zIndex: 999 }]}>
+            <SectionTitle title="Localização" />
+            <View style={{ height: 52, zIndex: 999 }}>
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000 }}>
+                <GooglePlacesAutocomplete
+                  placeholder="Busque o lugar pelo nome..."
+                  getDefaultValue={() => placeName}
+                  listViewDisplayed={listVisible}
+                  onPress={(data, details = null) => {
+                    setListVisible(false);
+                    setPlaceName(details?.name || data.description);
+                    setPlaceId(data.place_id);
+                    if (details?.geometry?.location) {
+                      setLatitude(details.geometry.location.lat);
+                      setLongitude(details.geometry.location.lng);
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_PLACES_API_KEY,
+                    language: 'pt-BR',
+                  }}
+                  fetchDetails={true}
+                  styles={{
+                    textInput: styles.autocompleteInput,
+                    listView: styles.autocompleteListView,
+                    container: { flex: 0 },
+                  }}
+                  textInputProps={{
+                    placeholderTextColor: colors.textLight,
+                    defaultValue: placeName,
+                    onFocus: () => setListVisible(true),
+                  }}
+                />
+              </View>
+            </View>
+            {placeName ? (
+              <Text style={styles.selectedPlaceText}>
+                <Ionicons name="location" size={14} color={colors.primary} /> {placeName} selecionado.
+              </Text>
+            ) : null}
+          </View>
+
+          <View style={[styles.section, { zIndex: 1 }]}>
             <SectionTitle title="Legenda" />
             <CustomInput
               icon="chatbox-ellipses-outline"
@@ -510,4 +561,33 @@ const styles = StyleSheet.create({
   publishButtonDisabled: { backgroundColor: '#D1D1D6', shadowOpacity: 0 },
   publishButtonText: { color: colors.white, fontSize: 17, fontWeight: '600' },
   publishHint: { textAlign: 'center', color: '#8E8E93', fontSize: 12, marginTop: 8 },
+
+  searchContainer: { 
+    backgroundColor: colors.surface, 
+    borderRadius: 12, 
+    minHeight: 52 
+  },
+  autocompleteInput: {
+    backgroundColor: 'transparent',
+    color: colors.text,
+    fontSize: 16,
+    height: 52,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  autocompleteListView: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    marginTop: -1,
+  },
+  selectedPlaceText: {
+    marginTop: 8,
+    fontSize: 13,
+    color: colors.textLight,
+    fontWeight: '500',
+  },
 });

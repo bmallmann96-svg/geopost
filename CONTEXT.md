@@ -135,6 +135,8 @@ A tela Explorar foi completamente refatorada com:
 - [x] Fluxo de criação de Ponto Turístico: formulário rico com avaliações por dimensão, chips de tipo de atrativo, tempo/época/horário, lotação, acesso, dica principal obrigatória e "Visitaria novamente"; botão Publicar só ativa quando campos obrigatórios preenchidos; PostCard expandido exibe todos os campos
 - [x] Georreferenciamento e Mapa Clicável: NewPostScreen usa Google Places API para buscar nome/lat/lng; PostDetailsScreen salva coordenadas reais; MapViews agora são clicáveis abrindo SinglePostScreen
 - [x] Detalhes e Edição: SinglePostScreen renderiza mapa com pin fixo e PostCard do local; EditPostScreen e EditListScreen permitem edição do nome, descrição e dados opcionais sem apagar fotos; API PUTs implementados
+- [x] Correção de Bugs (Explore & Edit, Autocomplete e Listas): Resolvido problema do `Callout` no ExploreScreen com uso de `onPress` no Marker. Campo GooglePlacesAutocomplete (Georreferenciamento) implantado no EditPostScreen salvando mudanças. Corrigimos os warnings "VirtualizedLists should never be nested" renderizando o autocomplete em block container de `position: "absolute"`.
+- [x] Otimização das Listas Curadas: Expansão do grid de emojis categorizados em Scroll Horizontal no New/Edit. Listas agora buscam itens integrando `POST` e `DELETE` em `EditListScreen` ao gerenciar adições de novos posts ou remoções da lista.
 
 ## Observações técnicas
 - IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)

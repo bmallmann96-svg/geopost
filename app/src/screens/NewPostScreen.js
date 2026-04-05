@@ -26,6 +26,7 @@ export default function NewPostScreen({ navigation }) {
   const [placeId, setPlaceId] = useState('');
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
+  const [listVisible, setListVisible] = useState(false);
 
   const [mediaUrl, setMediaUrl] = useState(null);
   const [mediaType, setMediaType] = useState('photo'); // 'photo' | 'video'
@@ -175,31 +176,37 @@ export default function NewPostScreen({ navigation }) {
           {/* Busca de Local (Georreferenciamento) */}
           <View style={[styles.section, { zIndex: 999 }]}>
             <Text style={styles.sectionTitle}>Localização</Text>
-            <View style={styles.searchContainer}>
-              <GooglePlacesAutocomplete
-                placeholder="Busque o lugar pelo nome..."
-                onPress={(data, details = null) => {
-                  setPlace(details?.name || data.description);
-                  setPlaceId(data.place_id);
-                  if (details?.geometry?.location) {
-                    setLatitude(details.geometry.location.lat);
-                    setLongitude(details.geometry.location.lng);
-                  }
-                }}
-                query={{
-                  key: GOOGLE_PLACES_API_KEY,
-                  language: 'pt-BR',
-                }}
-                fetchDetails={true}
-                styles={{
-                  textInput: styles.autocompleteInput,
-                  listView: styles.autocompleteListView,
-                  container: { flex: 0 },
-                }}
-                textInputProps={{
-                  placeholderTextColor: colors.textLight,
-                }}
-              />
+            <View style={{ height: 52, zIndex: 999 }}>
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000 }}>
+                <GooglePlacesAutocomplete
+                  placeholder="Busque o lugar pelo nome..."
+                  listViewDisplayed={listVisible}
+                  onPress={(data, details = null) => {
+                    setListVisible(false);
+                    setPlace(details?.name || data.description);
+                    setPlaceId(data.place_id);
+                    if (details?.geometry?.location) {
+                      setLatitude(details.geometry.location.lat);
+                      setLongitude(details.geometry.location.lng);
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_PLACES_API_KEY,
+                    language: 'pt-BR',
+                  }}
+                  fetchDetails={true}
+                  styles={{
+                    textInput: styles.autocompleteInput,
+                    listView: styles.autocompleteListView,
+                    container: { flex: 0 },
+                  }}
+                  textInputProps={{
+                    placeholderTextColor: colors.textLight,
+                    onFocus: () => setListVisible(true),
+                    /* remove onBlur to not dismiss early when pressing list items */
+                  }}
+                />
+              </View>
             </View>
             {place ? (
               <Text style={styles.selectedPlaceText}>

@@ -11,7 +11,12 @@ import { useAuth } from '../context/AuthContext';
 
 const API = 'https://geopost-production.up.railway.app';
 
-const EMOJI_OPTIONS = ['🍕', '🍣', '🍺', '🌮', '🥗', '🎭', '🏛️', '🌿', '🛍️', '☕', '🏨', '🎵', '📍', '🌅', '🏖️', '🎨'];
+const EMOJI_CATEGORIES = [
+  { label: 'Comida e bebida', emojis: ['🍕','🍣','🍺','🌮','🥗','🍔','🍜','🍱','🥩','🍷','🍸','🫕','🥘','🍝','🧆','🫙','🍰','🧁','🍫'] },
+  { label: 'Viagem e lugares', emojis: ['✈️','🗺️','🏖️','🏔️','🌍','🗼','🏰','🌅','🏕️','⛵','🚂','🎡','🗽','🏯','🌋','🛳️'] },
+  { label: 'Atividades', emojis: ['🎭','🎵','🏃','🚴','🧗','🤿','🎯','🎲','🎬','🎨','🏋️','🧘','⚽','🎾','🏄'] },
+  { label: 'Natureza', emojis: ['🌿','🌊','🌸','🌲','🦋','🐠','🌺','🍃','🌻','🏞️'] },
+];
 const COLOR_OPTIONS = [
   { value: '#F97316', label: 'Laranja' },
   { value: '#7F77DD', label: 'Roxo' },
@@ -114,7 +119,7 @@ export default function CreateListScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* Título */}
         <View style={styles.section}>
@@ -146,17 +151,22 @@ export default function CreateListScreen({ navigation }) {
         {/* Emoji */}
         <View style={styles.section}>
           <Text style={styles.label}>Emoji</Text>
-          <View style={styles.emojiGrid}>
-            {EMOJI_OPTIONS.map(e => (
-              <TouchableOpacity
-                key={e}
-                style={[styles.emojiBtn, selectedEmoji === e && styles.emojiBtnSelected]}
-                onPress={() => setSelectedEmoji(e)}
-              >
-                <Text style={styles.emojiText}>{e}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {EMOJI_CATEGORIES.map(category => (
+            <View key={category.label} style={{ marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, color: '#8E8E93', marginBottom: 6 }}>{category.label}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                {category.emojis.map(e => (
+                  <TouchableOpacity
+                    key={e}
+                    style={[styles.emojiBtn, selectedEmoji === e && styles.emojiBtnSelected]}
+                    onPress={() => setSelectedEmoji(e)}
+                  >
+                    <Text style={styles.emojiText}>{e}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ))}
         </View>
 
         {/* Cor */}

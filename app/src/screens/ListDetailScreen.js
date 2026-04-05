@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   SafeAreaView, Platform, StatusBar, ActivityIndicator,
@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { colors } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const API = 'https://geopost-production.up.railway.app';
 const { width } = Dimensions.get('window');
@@ -22,17 +23,31 @@ export default function ListDetailScreen({ route, navigation }) {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState('map');
 
-  useEffect(() => {
-    fetchList();
-  }, [listId]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchList();
+    }, [listId])
+  );
 
   const fetchList = async () => {
+    console.log('ListDetailScreen - fetchList triggered for list:', listId);
     try {
+      setIsLoading(true);
       const token = await AsyncStorage.getItem('@token');
       const res = await fetch(`${API}/lists/${listId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
       });
-      if (res.ok) setList(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setList(data);
+      } else {
+         console.log('Error fetching list - status:', res.status);
+      }
     } catch (e) {
       console.log('Error fetching list', e);
     } finally {
