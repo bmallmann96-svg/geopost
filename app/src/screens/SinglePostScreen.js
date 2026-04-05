@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ActivityIndicator, Text, TouchableOpacity, ScrollView, Platform, StatusBar } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ActivityIndicator, Text, TouchableOpacity, ScrollView, Platform, StatusBar, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -119,6 +119,43 @@ export default function SinglePostScreen({ route, navigation }) {
     navigation.navigate('EditPost', { post });
   };
 
+  const handleShare = () => {
+    navigation.navigate('ShareCard', { postId });
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Tem certeza?',
+      'Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Excluir', 
+          style: 'destructive',
+          onPress: async () => {
+             setIsLoading(true);
+             try {
+                const token = await AsyncStorage.getItem('@token');
+                const res = await fetch(`${API}/posts/${postId}`, {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                   navigation.navigate('Tabs', { screen: 'Perfil' });
+                } else {
+                   Alert.alert('Erro', 'Não foi possível excluir o post.');
+                   setIsLoading(false);
+                }
+             } catch (e) {
+                Alert.alert('Erro', 'Ocorreu um erro de conexão.');
+                setIsLoading(false);
+             }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -153,6 +190,20 @@ export default function SinglePostScreen({ route, navigation }) {
             onEdit={currentUser?.id === post.userId ? handleEdit : null}
           />
         </View>
+
+        <View style={styles.actionContainer}>
+          <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+            <Ionicons name="share-social-outline" size={20} color={colors.primary} />
+            <Text style={styles.shareBtnText}>Compartilhar</Text>
+          </TouchableOpacity>
+
+          {currentUser?.id === post.userId && (
+            <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+               <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+               <Text style={styles.deleteBtnText}>Excluir post</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -178,4 +229,42 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '600', color: colors.text },
   mapContainer: { width: '100%', height: 200 },
   map: { flex: 1 },
+  actionContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 20,
+    gap: 12,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF8F3',
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  shareBtnText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFEBEB',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  deleteBtnText: {
+    color: '#FF3B30',
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });

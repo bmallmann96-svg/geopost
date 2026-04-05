@@ -370,6 +370,17 @@ fastify.put('/posts/:id', { preHandler: [authenticateToken] }, async (request, r
     return updatedPost
 })
 
+fastify.delete('/posts/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { id } = request.params
+    
+    // Verify if place exists and is owned by user
+    const post = await prisma.post.findFirst({ where: { id, userId: request.user.id } })
+    if (!post) return reply.status(403).send({ error: 'Post não encontrado ou você não tem permissão para excluí-lo' })
+    
+    // Deletes the post (and cascades to ListItem etc if DB schema has it, or just deletes it)
+    await prisma.post.delete({ where: { id } })
+    return { success: true }
+})
 
 // ── Rotas de Listas ────────────────────────────────────────
 
@@ -504,6 +515,107 @@ fastify.delete('/lists/:listId', { preHandler: [authenticateToken] }, async (req
 
     await prisma.list.delete({ where: { id: listId } })
     return { success: true }
+})
+
+// ── Rota Web Pública ────────────────────────────────────────
+
+fastify.get('/p/:username', async (request, reply) => {
+    const { username } = request.params
+    
+    const user = await prisma.user.findUnique({
+        where: { username },
+        include: {
+            _count: { select: { posts: true, followers: true, following: true } },
+            posts: {
+                take: 9,
+                orderBy: { createdAt: 'desc' },
+                select: { id: true, photoUrl: true, placeName: true, latitude: true, longitude: true }
+            }
+        }
+    })
+
+    if (!user) {
+        return reply.header('Content-Type', 'text/html; charset=utf-8')
+            .send('<html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="font-family: sans-serif; text-align: center; padding: 50px;"><h1>404 - Perfil não encontrado</h1><p>O perfil que você tentou acessar não existe no GeoPost.</p></body></html>')
+    }
+
+    const { posts, _count } = user
+
+    const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${user.name} (@${user.username}) no GeoPost</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #FFFFFF; color: #1C1C1E; padding-bottom: 80px; }
+        .header { padding: 20px 16px; border-bottom: 1px solid #E5E5EA; text-align: center; }
+        .logo { color: #F97316; font-weight: 800; font-size: 24px; margin-bottom: 16px; letter-spacing: -0.5px; }
+        .avatar { width: 80px; height: 80px; border-radius: 40px; background-color: #F5F5F5; margin: 0 auto 12px; object-fit: cover; }
+        .name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+        .username { color: #8E8E93; font-size: 15px; margin-bottom: 16px; }
+        .stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 16px; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 17px; font-weight: 700; }
+        .stat-label { font-size: 13px; color: #8E8E93; }
+        
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+        .grid-item { aspect-ratio: 1; position: relative; overflow: hidden; background-color: #F5F5F5; display: block; text-decoration: none; }
+        .grid-item img { width: 100%; height: 100%; object-fit: cover; border: none; }
+        .place-name { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: white; font-size: 11px; padding: 12px 6px 6px; font-weight: 500; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        
+        .empty { padding: 40px 20px; text-align: center; color: #8E8E93; font-size: 15px; }
+
+        .cta-bottom { position: fixed; bottom: 0; left: 0; right: 0; background-color: rgba(255, 255, 255, 0.95); padding: 16px; border-top: 1px solid #E5E5EA; backdrop-filter: blur(10px); z-index: 100; display: flex; justify-content: center; }
+        .cta-button { background-color: #F97316; color: white; text-decoration: none; font-weight: 700; font-size: 16px; width: 100%; max-width: 400px; text-align: center; padding: 14px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">GeoPost</div>
+        <img src="${user.avatar || 'https://via.placeholder.com/80?text=' + user.username.charAt(0).toUpperCase()}" alt="${user.name}" class="avatar" />
+        <h1 class="name">${user.name}</h1>
+        <p class="username">@${user.username}</p>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">${_count.posts}</div>
+                <div class="stat-label">posts</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${_count.followers}</div>
+                <div class="stat-label">seguidores</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${_count.following}</div>
+                <div class="stat-label">seguindo</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        ${posts.length === 0 ? '<div class="empty">Nenhum post ainda.</div>' : `
+        <div class="grid">
+            ${posts.map(p => `
+            <a href="https://maps.google.com/?q=${p.latitude},${p.longitude}" target="_blank" class="grid-item">
+                <img src="${p.photoUrl}" alt="${p.placeName}" loading="lazy" />
+                <div class="place-name">${p.placeName}</div>
+            </a>
+            `).join('')}
+        </div>
+        `}
+    </main>
+
+    <div class="cta-bottom">
+        <a href="https://geopost-production.up.railway.app" class="cta-button">Baixar o GeoPost</a>
+    </div>
+</body>
+</html>
+    `
+
+    reply.header('Content-Type', 'text/html; charset=utf-8').send(html)
 })
 
 const start = async () => {

@@ -23,6 +23,7 @@ import StoryCreatorScreen from './src/screens/StoryCreatorScreen'
 import SinglePostScreen from './src/screens/SinglePostScreen'
 import EditPostScreen from './src/screens/EditPostScreen'
 import EditListScreen from './src/screens/EditListScreen'
+import ShareCardScreen from './src/screens/ShareCardScreen'
 import { colors } from './src/theme/colors'
 import { AuthProvider, useAuth } from './src/context/AuthContext'
 
@@ -137,6 +138,7 @@ function MainAppNavigator() {
       <MainStack.Screen name="EditList" component={EditListScreen} options={{ presentation: 'card' }} />
       <MainStack.Screen name="StoryViewer" component={StoryViewerScreen} />
       <MainStack.Screen name="StoryCreator" component={StoryCreatorScreen} />
+      <MainStack.Screen name="ShareCard" component={ShareCardScreen} options={{ presentation: 'card' }} />
     </MainStack.Navigator>
   )
 }
