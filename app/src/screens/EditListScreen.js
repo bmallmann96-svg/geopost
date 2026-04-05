@@ -36,7 +36,7 @@ export default function EditListScreen({ route, navigation }) {
   const [selectedColor, setSelectedColor] = useState(listColor || '#F97316');
   
   const [userPosts, setUserPosts] = useState([]);
-  const [selectedPosts, setSelectedPosts] = useState([]);
+  const [selectedPostIds, setSelectedPostIds] = useState([]);
   const [originalPostIds, setOriginalPostIds] = useState([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   
@@ -69,7 +69,7 @@ export default function EditListScreen({ route, navigation }) {
       if (listRes.ok) {
         const listData = await listRes.json();
         const ids = listData.posts ? listData.posts.map(p => p.id) : [];
-        setSelectedPosts(ids);
+        setSelectedPostIds(ids);
         setOriginalPostIds(ids);
       }
     } catch (e) {
@@ -80,7 +80,7 @@ export default function EditListScreen({ route, navigation }) {
   };
 
   const togglePost = (postId) => {
-    setSelectedPosts(prev =>
+    setSelectedPostIds(prev =>
       prev.includes(postId) ? prev.filter(id => id !== postId) : [...prev, postId]
     );
   };
@@ -107,32 +107,24 @@ export default function EditListScreen({ route, navigation }) {
       });
       if (!updateRes.ok) throw new Error('Erro ao atualizar lista');
 
-      // Adicionar posts novos
-      const postsToAdd = selectedPosts.filter(id => !originalPostIds.includes(id));
-      console.log('Adicionando posts:', postsToAdd);
-      await Promise.all(
-        postsToAdd.map(async postId => {
-          const res = await fetch(`${API}/lists/${listId}/items`, {
+      const toAdd = selectedPostIds.filter(id => !originalPostIds.includes(id));
+      const toRemove = originalPostIds.filter(id => !selectedPostIds.includes(id));
+      
+      await Promise.all([
+        ...toAdd.map(postId => 
+          fetch(`${API}/lists/${listId}/items`, {
             method: 'POST',
-            headers,
-            body: JSON.stringify({ postId }),
-          });
-          if (!res.ok) console.log('Erro ao add:', postId, await res.text());
-        })
-      );
-
-      // Remover posts desmarcados
-      const postsToRemove = originalPostIds.filter(id => !selectedPosts.includes(id));
-      console.log('Removendo posts:', postsToRemove);
-      await Promise.all(
-        postsToRemove.map(async postId => {
-          const res = await fetch(`${API}/lists/${listId}/items/${postId}`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ postId })
+          })
+        ),
+        ...toRemove.map(postId =>
+          fetch(`${API}/lists/${listId}/items/${postId}`, {
             method: 'DELETE',
-            headers,
-          });
-          if (!res.ok) console.log('Erro ao remover:', postId, await res.text());
-        })
-      );
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        )
+      ]);
 
       navigation.goBack();
       // Em um app real usaríamos Events ou Redux para atualizar a tela anterior
@@ -229,14 +221,14 @@ export default function EditListScreen({ route, navigation }) {
 
         {/* Posts do usuário */}
         <View style={styles.section}>
-          <Text style={styles.label}>Editar lugares ({selectedPosts.length} selecionados)</Text>
+          <Text style={styles.label}>Editar lugares ({selectedPostIds.length} selecionados)</Text>
           {isLoadingPosts ? (
             <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />
           ) : userPosts.length === 0 ? (
             <Text style={styles.noPostsText}>Você não tem posts para gerenciar.</Text>
           ) : (
             userPosts.map(post => {
-              const isSelected = selectedPosts.includes(post.id);
+              const isSelected = selectedPostIds.includes(post.id);
               return (
                 <TouchableOpacity
                   key={post.id}

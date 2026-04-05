@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
   SafeAreaView, Platform, StatusBar, ActivityIndicator,
-  Image, Dimensions
+  Image, Dimensions, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,6 +53,39 @@ export default function ListDetailScreen({ route, navigation }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDeleteList = () => {
+    Alert.alert(
+      'Tem certeza?',
+      'Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Excluir', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              const token = await AsyncStorage.getItem('@token');
+              const res = await fetch(`${API}/lists/${listId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (res.ok) {
+                navigation.navigate('Profile');
+              } else {
+                Alert.alert('Erro', 'Não foi possível excluir a lista.');
+                setIsLoading(false);
+              }
+            } catch (e) {
+              Alert.alert('Erro', 'Ocorreu um erro na exclusão.');
+              setIsLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (isLoading) {
@@ -178,6 +211,15 @@ export default function ListDetailScreen({ route, navigation }) {
       <View style={styles.content}>
         {viewMode === 'map' ? renderMapMode() : renderGridMode()}
       </View>
+
+      {list && user && list.userId === user.id && (
+        <View style={styles.deleteContainer}>
+          <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteList}>
+            <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.deleteBtnText}>Excluir lista</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -287,4 +329,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
   },
   emptyText: { color: '#8E8E93', fontSize: 15, textAlign: 'center' },
+
+  // Delete
+  deleteContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+    backgroundColor: '#FFFFFF',
+  },
+  deleteBtn: {
+    backgroundColor: '#FF3B30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  deleteBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
 });
