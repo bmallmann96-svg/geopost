@@ -154,13 +154,18 @@ export default function EditListScreen({ route, navigation }) {
                 headers: { Authorization: `Bearer ${token}` }
               });
               if (res.ok) {
-                navigation.navigate('Perfil');
+                try {
+                  navigation.navigate('Tabs', { screen: 'Perfil' });
+                } catch (navError) {
+                  console.log('Erro de navegação:', navError);
+                  navigation.goBack(); // fallback apenas se a navegação aninhada falhar terrivelmente
+                }
               } else {
                 Alert.alert('Erro', 'Não foi possível excluir a lista.');
                 setIsDeleting(false);
               }
             } catch (e) {
-              Alert.alert('Erro', 'Ocorreu um erro na exclusão.');
+              Alert.alert('Erro', 'Ocorreu um erro na conexão. Tente novamente.');
               setIsDeleting(false);
             }
           }
