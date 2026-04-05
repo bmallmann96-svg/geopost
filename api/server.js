@@ -300,6 +300,77 @@ fastify.get('/posts/user/:userId', { preHandler: [authenticateToken] }, async (r
     return posts
 })
 
+fastify.get('/posts/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { id } = request.params
+    const post = await prisma.post.findUnique({
+        where: { id },
+        include: {
+            user: { select: { name: true, username: true, avatar: true } }
+        }
+    })
+    if (!post) return reply.status(404).send({ error: 'Post não encontrado' })
+    return post
+})
+
+fastify.put('/posts/:id', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { id } = request.params
+    
+    const post = await prisma.post.findFirst({ where: { id, userId: request.user.id } })
+    if (!post) return reply.status(403).send({ error: 'Não autorizado' })
+
+    const {
+        caption, rating, placeName, placeId, latitude, longitude,
+        // Campos de restaurante
+        cuisineTypes, priceRange, occasions, mealTimes,
+        wouldReturn, bestDish, tip, foodRating, serviceRating, ambienceRating, valueRating,
+        // Campos de ponto turístico
+        visitDuration, bestSeason, bestTimeOfDay, crowdLevel, howToGetThere,
+        wheelchairAccess, petsAllowed, touristTip, mustSee, attractionTypes,
+        experienceRating, accessibilityRating, conservationRating
+    } = request.body
+
+    const updatedPost = await prisma.post.update({
+        where: { id },
+        data: {
+            caption: caption !== undefined ? caption : post.caption,
+            rating: rating !== undefined ? rating : post.rating,
+            placeName: placeName !== undefined ? placeName : post.placeName,
+            placeId: placeId !== undefined ? placeId : post.placeId,
+            latitude: latitude !== undefined ? latitude : post.latitude,
+            longitude: longitude !== undefined ? longitude : post.longitude,
+            // Restaurante
+            cuisineTypes: cuisineTypes || post.cuisineTypes,
+            priceRange: priceRange !== undefined ? priceRange : post.priceRange,
+            occasions: occasions || post.occasions,
+            mealTimes: mealTimes || post.mealTimes,
+            wouldReturn: wouldReturn !== undefined ? wouldReturn : post.wouldReturn,
+            bestDish: bestDish !== undefined ? bestDish : post.bestDish,
+            tip: tip !== undefined ? tip : post.tip,
+            foodRating: foodRating !== undefined ? foodRating : post.foodRating,
+            serviceRating: serviceRating !== undefined ? serviceRating : post.serviceRating,
+            ambienceRating: ambienceRating !== undefined ? ambienceRating : post.ambienceRating,
+            valueRating: valueRating !== undefined ? valueRating : post.valueRating,
+            // Ponto turístico
+            visitDuration: visitDuration !== undefined ? visitDuration : post.visitDuration,
+            bestSeason: bestSeason || post.bestSeason,
+            bestTimeOfDay: bestTimeOfDay || post.bestTimeOfDay,
+            crowdLevel: crowdLevel !== undefined ? crowdLevel : post.crowdLevel,
+            howToGetThere: howToGetThere || post.howToGetThere,
+            wheelchairAccess: wheelchairAccess !== undefined ? wheelchairAccess : post.wheelchairAccess,
+            petsAllowed: petsAllowed !== undefined ? petsAllowed : post.petsAllowed,
+            touristTip: touristTip !== undefined ? touristTip : post.touristTip,
+            mustSee: mustSee !== undefined ? mustSee : post.mustSee,
+            attractionTypes: attractionTypes || post.attractionTypes,
+            experienceRating: experienceRating !== undefined ? experienceRating : post.experienceRating,
+            accessibilityRating: accessibilityRating !== undefined ? accessibilityRating : post.accessibilityRating,
+            conservationRating: conservationRating !== undefined ? conservationRating : post.conservationRating,
+        }
+    })
+
+    return updatedPost
+})
+
+
 // ── Rotas de Listas ────────────────────────────────────────
 
 fastify.post('/lists', { preHandler: [authenticateToken] }, async (request, reply) => {
@@ -403,6 +474,26 @@ fastify.delete('/lists/:listId/items/:postId', { preHandler: [authenticateToken]
 
     await prisma.listItem.deleteMany({ where: { listId, postId } })
     return { success: true }
+})
+
+fastify.put('/lists/:listId', { preHandler: [authenticateToken] }, async (request, reply) => {
+    const { listId } = request.params
+    const { title, description, emoji, color } = request.body
+
+    const list = await prisma.list.findFirst({ where: { id: listId, userId: request.user.id } })
+    if (!list) return reply.status(403).send({ error: 'Não autorizado' })
+
+    const updatedList = await prisma.list.update({
+        where: { id: listId },
+        data: {
+            title: title || list.title,
+            description: description !== undefined ? description : list.description,
+            emoji: emoji || list.emoji,
+            color: color || list.color,
+        }
+    })
+
+    return updatedList
 })
 
 fastify.delete('/lists/:listId', { preHandler: [authenticateToken] }, async (request, reply) => {
