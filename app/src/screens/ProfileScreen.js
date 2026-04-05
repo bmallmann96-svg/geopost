@@ -132,7 +132,10 @@ export default function ProfileScreen({ navigation }) {
       keyExtractor={(item) => item.id}
       numColumns={3}
       renderItem={({ item }) => (
-        <TouchableOpacity style={styles.gridItemContainer}>
+        <TouchableOpacity 
+          style={styles.gridItemContainer}
+          onPress={() => navigation.navigate('SinglePost', { postId: item.id })}
+        >
           <Image source={{ uri: item.photoUrl }} style={styles.gridImage} />
         </TouchableOpacity>
       )}
@@ -158,7 +161,7 @@ export default function ProfileScreen({ navigation }) {
             coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
           >
             <Ionicons name="location" size={36} color={colors.primary} />
-            <Callout tooltip>
+            <Callout tooltip onPress={() => navigation.navigate('SinglePost', { postId: pin.id })}>
               <View style={styles.calloutContainer}>
                 <Image source={{ uri: pin.photoUrl }} style={styles.calloutImage} />
                 <Text style={styles.calloutTitle}>{pin.placeName}</Text>

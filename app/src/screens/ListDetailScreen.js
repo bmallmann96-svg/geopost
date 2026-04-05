@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { colors } from '../theme/colors';
+import { useAuth } from '../context/AuthContext';
 
 const API = 'https://geopost-production.up.railway.app';
 const { width } = Dimensions.get('window');
@@ -15,6 +16,7 @@ const GRID_SIZE = (width - 4) / 3;
 
 export default function ListDetailScreen({ route, navigation }) {
   const { listId, listTitle, listEmoji, listColor } = route.params;
+  const { user } = useAuth();
 
   const [list, setList] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +81,7 @@ export default function ListDetailScreen({ route, navigation }) {
             </View>
             <View style={[styles.pinTail, { borderTopColor: pinColor }]} />
           </View>
-          <Callout tooltip onPress={() => {/* Poderia navegar para o post */}}>
+          <Callout tooltip onPress={() => navigation.navigate('SinglePost', { postId: post.id })}>
             <View style={styles.callout}>
               <Image source={{ uri: post.photoUrl }} style={styles.calloutImage} />
               <Text style={styles.calloutName} numberOfLines={1}>{post.placeName}</Text>
@@ -96,7 +98,10 @@ export default function ListDetailScreen({ route, navigation }) {
       keyExtractor={item => item.id}
       numColumns={3}
       renderItem={({ item }) => (
-        <TouchableOpacity style={styles.gridItem}>
+        <TouchableOpacity 
+          style={styles.gridItem}
+          onPress={() => navigation.navigate('SinglePost', { postId: item.id })}
+        >
           <Image source={{ uri: item.photoUrl }} style={styles.gridImage} />
           <View style={[styles.gridOverlay, { borderColor: pinColor }]} />
         </TouchableOpacity>
@@ -121,7 +126,15 @@ export default function ListDetailScreen({ route, navigation }) {
           <Text style={styles.headerEmoji}>{list?.emoji || listEmoji || '📍'}</Text>
           <Text style={styles.headerTitle} numberOfLines={1}>{list?.title || listTitle}</Text>
         </View>
-        <View style={{ width: 36 }} />
+        <View style={styles.rightAction}>
+          {list && user && list.userId === user.id ? (
+            <TouchableOpacity onPress={() => navigation.navigate('EditList', { listId, listTitle: list.title, listDescription: list.description, listEmoji: list.emoji, listColor: list.color })} style={{ padding: 4 }}>
+              <Ionicons name="pencil-outline" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 32 }} />
+          )}
+        </View>
       </View>
 
       {/* Info bar */}

@@ -10,8 +10,8 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function PostCard({ post }) {
-  const [expanded, setExpanded] = useState(false);
+export default function PostCard({ post, defaultExpanded = false, onEdit }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const navigation = useNavigation();
 
   const toggleExpand = () => {
@@ -34,9 +34,11 @@ export default function PostCard({ post }) {
             <Text style={styles.usernameText}>@{post.user.username}</Text>
           </View>
         </View>
-        <TouchableOpacity>
-          <Ionicons name="ellipsis-horizontal" size={20} color={colors.textLight} />
-        </TouchableOpacity>
+        {onEdit && (
+          <TouchableOpacity onPress={onEdit} style={{ padding: 4 }}>
+            <Ionicons name="pencil-outline" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Foto */}

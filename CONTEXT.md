@@ -86,7 +86,7 @@ A organização nativa (React Navigation) no arquivo `/app/App.js` gerencia as h
 - `GET /auth/me` — retorna usuário logado (requer token)
 
 ### Posts
-- `POST /posts` — cria novo post; aceita todos os campos de restaurante: `mediaType`, `cuisineTypes[]`, `priceRange`, `occasions[]`, `mealTimes[]`, `wouldReturn`, `bestDish`, `tip`, `foodRating`, `serviceRating`, `ambienceRating`, `valueRating` (requer token)
+- `POST /posts` — aceita todos os campos de restaurante E ponto turístico: `visitDuration`, `bestSeason[]`, `bestTimeOfDay[]`, `crowdLevel`, `howToGetThere[]`, `wheelchairAccess`, `petsAllowed`, `touristTip`, `mustSee`, `attractionTypes[]`, `experienceRating`, `accessibilityRating`, `conservationRating` (requer token)
 - `GET /posts/feed` — feed inteligente dos últimos 30 dias: posts de usuários seguidos aparecem primeiro (priority=1), depois os demais (priority=2); ordenado por prioridade e recente; limite de 20 (requer token)
 - `GET /posts/user/:userId` — posts de um usuário específico; retorna todos os campos incluindo os de restaurante (requer token)
 
@@ -132,6 +132,9 @@ A tela Explorar foi completamente refatorada com:
 - [x] Suporte a vídeo no upload (NewPostScreen): seleção foto/vídeo, validação de 90s, preview com expo-av, upload para Cloudinary `/video/upload`
 - [x] PostCard expandido exibe campos ricos de restaurante: notas por dimensão, chips, badge de retorno, dica em itálico, melhor pedido
 - [x] Sistema de listas curadas: modelos List e ListItem no banco, 6 rotas de API, telas MyListsScreen/CreateListScreen/ListDetailScreen, aba Listas no perfil próprio e no perfil de outros usuários, pins coloridos por lista no mapa
+- [x] Fluxo de criação de Ponto Turístico: formulário rico com avaliações por dimensão, chips de tipo de atrativo, tempo/época/horário, lotação, acesso, dica principal obrigatória e "Visitaria novamente"; botão Publicar só ativa quando campos obrigatórios preenchidos; PostCard expandido exibe todos os campos
+- [x] Georreferenciamento e Mapa Clicável: NewPostScreen usa Google Places API para buscar nome/lat/lng; PostDetailsScreen salva coordenadas reais; MapViews agora são clicáveis abrindo SinglePostScreen
+- [x] Detalhes e Edição: SinglePostScreen renderiza mapa com pin fixo e PostCard do local; EditPostScreen e EditListScreen permitem edição do nome, descrição e dados opcionais sem apagar fotos; API PUTs implementados
 
 ## Observações técnicas
 - IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)

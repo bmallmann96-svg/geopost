@@ -175,7 +175,11 @@ export default function ExploreScreen({ navigation }) {
   };
 
   const renderGridItem = ({ item }) => (
-    <View style={styles.gridCard}>
+    <TouchableOpacity 
+      style={styles.gridCard}
+      onPress={() => navigation.navigate('SinglePost', { postId: item.id })}
+      activeOpacity={0.8}
+    >
       <View style={styles.gridImageWrapper}>
         <Image source={{ uri: item.imageUrl }} style={styles.gridImage} />
       </View>
@@ -184,7 +188,7 @@ export default function ExploreScreen({ navigation }) {
         <Text style={styles.gridCategory}>{item.category}</Text>
         <StarsMini rating={item.rating} />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const mapRegion = userLocation
@@ -297,6 +301,12 @@ export default function ExploreScreen({ navigation }) {
                     <View style={styles.pinDot}>
                       <Ionicons name="location" size={30} color={colors.primary} />
                     </View>
+                    <Callout tooltip onPress={() => navigation.navigate('SinglePost', { postId: pin.id })}>
+                       <View style={{ backgroundColor: 'white', padding: 8, borderRadius: 8 }}>
+                          <Text style={{ fontWeight: 'bold' }}>{pin.name}</Text>
+                          <Text style={{ fontSize: 12, color: colors.textLight }}>Toque para abrir</Text>
+                       </View>
+                    </Callout>
                   </Marker>
                 ))}
               </MapView>

@@ -7,10 +7,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Video } from 'expo-av';
 import Constants from 'expo-constants';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { colors } from '../theme/colors';
 
 const CLOUD_NAME = Constants.expoConfig?.extra?.cloudinaryCloudName || 'geopost_placeholder';
 const UPLOAD_PRESET = Constants.expoConfig?.extra?.cloudinaryUploadPreset || 'geopost_unsigned';
+const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.ios?.config?.googleMapsApiKey || 'AIzaSyA5u0yMtmI3V23lw177o-889C04vC4JIGI';
 
 const POST_TYPES = [
   { id: 'restaurant', title: 'Restaurante/Bar', icon: 'restaurant-outline' },
@@ -21,6 +23,10 @@ const POST_TYPES = [
 export default function NewPostScreen({ navigation }) {
   const [selectedType, setSelectedType] = useState('restaurant');
   const [place, setPlace] = useState('');
+  const [placeId, setPlaceId] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+
   const [mediaUrl, setMediaUrl] = useState(null);
   const [mediaType, setMediaType] = useState('photo'); // 'photo' | 'video'
   const [videoRef, setVideoRef] = useState(null);
@@ -91,9 +97,16 @@ export default function NewPostScreen({ navigation }) {
       Alert.alert('Atenção', 'Selecione uma foto ou vídeo primeiro!');
       return;
     }
+    if (!latitude || !longitude) {
+      Alert.alert('Atenção', 'Busque e selecione um local válido!');
+      return;
+    }
     navigation.navigate('PostDetails', {
       type: selectedType,
       place,
+      placeId,
+      latitude,
+      longitude,
       photoUrl: mediaUrl,
       mediaType,
     });
@@ -110,7 +123,7 @@ export default function NewPostScreen({ navigation }) {
           <View style={{ width: 28 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
           {/* Área de mídia */}
           <View style={styles.mediaBox}>
@@ -159,8 +172,44 @@ export default function NewPostScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
+          {/* Busca de Local (Georreferenciamento) */}
+          <View style={[styles.section, { zIndex: 999 }]}>
+            <Text style={styles.sectionTitle}>Localização</Text>
+            <View style={styles.searchContainer}>
+              <GooglePlacesAutocomplete
+                placeholder="Busque o lugar pelo nome..."
+                onPress={(data, details = null) => {
+                  setPlace(details?.name || data.description);
+                  setPlaceId(data.place_id);
+                  if (details?.geometry?.location) {
+                    setLatitude(details.geometry.location.lat);
+                    setLongitude(details.geometry.location.lng);
+                  }
+                }}
+                query={{
+                  key: GOOGLE_PLACES_API_KEY,
+                  language: 'pt-BR',
+                }}
+                fetchDetails={true}
+                styles={{
+                  textInput: styles.autocompleteInput,
+                  listView: styles.autocompleteListView,
+                  container: { flex: 0 },
+                }}
+                textInputProps={{
+                  placeholderTextColor: colors.textLight,
+                }}
+              />
+            </View>
+            {place ? (
+              <Text style={styles.selectedPlaceText}>
+                <Ionicons name="location" size={14} color={colors.primary} /> {place} selecionado.
+              </Text>
+            ) : null}
+          </View>
+
           {/* Tipo de publicação */}
-          <View style={styles.section}>
+          <View style={[styles.section, { zIndex: 1 }]}>
             <Text style={styles.sectionTitle}>Tipo de publicação</Text>
             <View style={styles.typesContainer}>
               {POST_TYPES.map((type) => {
@@ -184,9 +233,9 @@ export default function NewPostScreen({ navigation }) {
 
         <View style={styles.footer}>
           <TouchableOpacity
-            style={[styles.nextButton, !selectedType && styles.nextButtonDisabled]}
+            style={[styles.nextButton, (!selectedType || !mediaUrl || !latitude) && styles.nextButtonDisabled]}
             onPress={handleNext}
-            disabled={!selectedType}
+            disabled={!selectedType || !mediaUrl || !latitude}
             activeOpacity={0.8}
           >
             <Text style={styles.nextButtonText}>Próximo</Text>
@@ -253,6 +302,37 @@ const styles = StyleSheet.create({
 
   section: { marginBottom: 32 },
   sectionTitle: { fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 16 },
+  
+  // Autocomplete
+  searchContainer: { 
+    backgroundColor: colors.surface, 
+    borderRadius: 12, 
+    minHeight: 52 
+  },
+  autocompleteInput: {
+    backgroundColor: 'transparent',
+    color: colors.text,
+    fontSize: 16,
+    height: 52,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  autocompleteListView: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    marginTop: -1,
+  },
+  selectedPlaceText: {
+    marginTop: 8,
+    fontSize: 13,
+    color: colors.textLight,
+    fontWeight: '500',
+  },
+
   typesContainer: { flexDirection: 'row', justifyContent: 'space-between' },
   typeCard: {
     flex: 1,

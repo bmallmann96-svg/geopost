@@ -20,6 +20,9 @@ import LoginScreen from './src/screens/LoginScreen'
 import RegisterScreen from './src/screens/RegisterScreen'
 import StoryViewerScreen from './src/screens/StoryViewerScreen'
 import StoryCreatorScreen from './src/screens/StoryCreatorScreen'
+import SinglePostScreen from './src/screens/SinglePostScreen'
+import EditPostScreen from './src/screens/EditPostScreen'
+import EditListScreen from './src/screens/EditListScreen'
 import { colors } from './src/theme/colors'
 import { AuthProvider, useAuth } from './src/context/AuthContext'
 
@@ -129,6 +132,9 @@ function MainAppNavigator() {
       <MainStack.Screen name="MyLists" component={MyListsScreen} options={{ presentation: 'card' }} />
       <MainStack.Screen name="CreateList" component={CreateListScreen} options={{ presentation: 'card' }} />
       <MainStack.Screen name="ListDetail" component={ListDetailScreen} options={{ presentation: 'card' }} />
+      <MainStack.Screen name="SinglePost" component={SinglePostScreen} options={{ presentation: 'card' }} />
+      <MainStack.Screen name="EditPost" component={EditPostScreen} options={{ presentation: 'card' }} />
+      <MainStack.Screen name="EditList" component={EditListScreen} options={{ presentation: 'card' }} />
       <MainStack.Screen name="StoryViewer" component={StoryViewerScreen} />
       <MainStack.Screen name="StoryCreator" component={StoryCreatorScreen} />
     </MainStack.Navigator>

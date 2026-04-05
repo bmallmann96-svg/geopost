@@ -5,6 +5,7 @@ import {
   Platform, ActivityIndicator, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
 
@@ -79,44 +80,48 @@ const WHEELCHAIR_OPTIONS = ['Sim', 'Parcialmente', 'Não'];
 const PETS_OPTIONS = ['Sim', 'Não'];
 
 // ── Tela principal ──────────────────────────────────────────
-export default function PostDetailsScreen({ route, navigation }) {
-  const { type, place, photoUrl, mediaType = 'photo' } = route?.params || { type: 'moment' };
+export default function EditPostScreen({ route, navigation }) {
+  const { post } = route.params;
+  const type = post.category || 'moment';
+  const photoUrl = post.imageUrl;
+  const mediaType = post.mediaType || 'photo';
+  const place = post.placeName;
 
-  const [caption, setCaption] = useState('');
+  const [caption, setCaption] = useState(post.caption || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Campos compartilhados
-  const [rating, setRating] = useState(0);
-  const [wouldReturn, setWouldReturn] = useState('');
+  const [rating, setRating] = useState(post.rating || 0);
+  const [wouldReturn, setWouldReturn] = useState(post.wouldReturn || '');
 
   // Restaurante
-  const [foodRating, setFoodRating] = useState(0);
-  const [serviceRating, setServiceRating] = useState(0);
-  const [ambienceRating, setAmbienceRating] = useState(0);
-  const [valueRating, setValueRating] = useState(0);
-  const [cuisineTypes, setCuisineTypes] = useState([]);
-  const [priceRange, setPriceRange] = useState('');
-  const [occasions, setOccasions] = useState([]);
-  const [mealTimes, setMealTimes] = useState([]);
-  const [bestDish, setBestDish] = useState('');
-  const [tip, setTip] = useState('');
+  const [foodRating, setFoodRating] = useState(post.foodRating || 0);
+  const [serviceRating, setServiceRating] = useState(post.serviceRating || 0);
+  const [ambienceRating, setAmbienceRating] = useState(post.ambienceRating || 0);
+  const [valueRating, setValueRating] = useState(post.valueRating || 0);
+  const [cuisineTypes, setCuisineTypes] = useState(post.cuisineTypes || []);
+  const [priceRange, setPriceRange] = useState(post.priceRange || '');
+  const [occasions, setOccasions] = useState(post.occasions || []);
+  const [mealTimes, setMealTimes] = useState(post.mealTimes || []);
+  const [bestDish, setBestDish] = useState(post.bestDish || '');
+  const [tip, setTip] = useState(post.tip || '');
 
   // Ponto Turístico
-  const [experienceRating, setExperienceRating] = useState(0);
-  const [valueRatingT, setValueRatingT] = useState(0);
-  const [accessibilityRating, setAccessibilityRating] = useState(0);
-  const [conservationRating, setConservationRating] = useState(0);
-  const [attractionTypes, setAttractionTypes] = useState([]);
-  const [visitDuration, setVisitDuration] = useState('');
-  const [bestSeason, setBestSeason] = useState([]);
-  const [bestTimeOfDay, setBestTimeOfDay] = useState([]);
-  const [crowdLevel, setCrowdLevel] = useState('');
-  const [howToGetThere, setHowToGetThere] = useState([]);
-  const [wheelchairAccess, setWheelchairAccess] = useState('');
-  const [petsAllowed, setPetsAllowed] = useState('');
-  const [touristTip, setTouristTip] = useState('');
-  const [mustSee, setMustSee] = useState('');
+  const [experienceRating, setExperienceRating] = useState(post.experienceRating || 0);
+  const [valueRatingT, setValueRatingT] = useState(post.valueRating || 0);
+  const [accessibilityRating, setAccessibilityRating] = useState(post.accessibilityRating || 0);
+  const [conservationRating, setConservationRating] = useState(post.conservationRating || 0);
+  const [attractionTypes, setAttractionTypes] = useState(post.attractionTypes || []);
+  const [visitDuration, setVisitDuration] = useState(post.visitDuration || '');
+  const [bestSeason, setBestSeason] = useState(post.bestSeason || []);
+  const [bestTimeOfDay, setBestTimeOfDay] = useState(post.bestTimeOfDay || []);
+  const [crowdLevel, setCrowdLevel] = useState(post.crowdLevel || '');
+  const [howToGetThere, setHowToGetThere] = useState(post.howToGetThere || []);
+  const [wheelchairAccess, setWheelchairAccess] = useState(post.wheelchairAccess || '');
+  const [petsAllowed, setPetsAllowed] = useState(post.petsAllowed || '');
+  const [touristTip, setTouristTip] = useState(post.touristTip || '');
+  const [mustSee, setMustSee] = useState(post.mustSee || '');
 
   const toggleMulti = (value, list, setList) =>
     setList(list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
@@ -128,7 +133,7 @@ export default function PostDetailsScreen({ route, navigation }) {
     type === 'restaurant' ? canPublishRestaurant :
     type === 'tourist' ? canPublishTourist : true;
 
-  const handlePublish = async () => {
+  const handleUpdate = async () => {
     if (type === 'tourist' && !canPublishTourist) {
       Alert.alert('Campos obrigatórios', 'Preencha: Avaliação geral, Dica principal e Visitaria novamente.');
       return;
@@ -141,46 +146,29 @@ export default function PostDetailsScreen({ route, navigation }) {
 
       if (type === 'restaurant') {
         body = {
-          photoUrl, caption, rating,
-          latitude: route?.params?.latitude || -23.5505,
-          longitude: route?.params?.longitude || -46.6333,
-          placeName: place || 'Local desconhecido',
-          placeId: route?.params?.placeId || 'fake-id',
-          category: type, mediaType,
+          caption, rating,
           cuisineTypes, priceRange, occasions, mealTimes, wouldReturn,
           bestDish, tip, foodRating, serviceRating, ambienceRating, valueRating,
         };
       } else if (type === 'tourist') {
         body = {
-          photoUrl, caption, rating,
-          latitude: route?.params?.latitude || -23.5505,
-          longitude: route?.params?.longitude || -46.6333,
-          placeName: place || 'Local desconhecido',
-          placeId: route?.params?.placeId || 'fake-id',
-          category: type, mediaType,
+          caption, rating,
           attractionTypes, visitDuration, bestSeason, bestTimeOfDay, crowdLevel,
           howToGetThere, wheelchairAccess, petsAllowed, touristTip, mustSee,
           experienceRating, accessibilityRating: accessibilityRating, conservationRating,
           valueRating: valueRatingT, wouldReturn,
         };
       } else {
-        body = {
-          photoUrl, caption, rating,
-          latitude: route?.params?.latitude || -23.5505,
-          longitude: route?.params?.longitude || -46.6333,
-          placeName: place || 'Local desconhecido',
-          placeId: route?.params?.placeId || 'fake-id',
-          category: type, mediaType,
-        };
+        body = { caption, rating };
       }
 
-      const res = await fetch(`${API}/posts`, {
-        method: 'POST',
+      const res = await fetch(`${API}/posts/${post.id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error('Erro ao publicar postagem.');
-      navigation.navigate('Feed');
+      if (!res.ok) throw new Error('Erro ao salvar postagem.');
+      navigation.goBack(); // Volta para tela SinglePost
     } catch (e) {
       setErrorMsg(e.message);
     } finally {
@@ -394,6 +382,12 @@ export default function PostDetailsScreen({ route, navigation }) {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Mídia não editável */}
+          <View style={{ marginBottom: 20, alignItems: 'center' }}>
+            {photoUrl && <Image source={{ uri: photoUrl }} style={{ width: '100%', height: 200, borderRadius: 12, opacity: 0.8 }} />}
+            <Text style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', padding: 4, borderRadius: 4, fontSize: 12 }}>Mídia original</Text>
+          </View>
+
           {errorMsg ? (
             <Text style={{ color: 'red', textAlign: 'center', marginBottom: 16, fontWeight: '500' }}>{errorMsg}</Text>
           ) : null}
@@ -416,14 +410,14 @@ export default function PostDetailsScreen({ route, navigation }) {
         <View style={styles.footer}>
           <TouchableOpacity
             style={[styles.publishButton, !canPublish && styles.publishButtonDisabled]}
-            onPress={handlePublish}
+            onPress={handleUpdate}
             disabled={isSubmitting || !canPublish}
             activeOpacity={0.8}
           >
             {isSubmitting ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.publishButtonText}>Publicar Post</Text>
+              <Text style={styles.publishButtonText}>Salvar Alterações</Text>
             )}
           </TouchableOpacity>
           {!canPublish && type === 'tourist' && (

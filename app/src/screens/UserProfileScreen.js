@@ -242,7 +242,10 @@ export default function UserProfileScreen({ route, navigation }) {
           key={viewMode} // força re-render ao trocar numColumns
           ListHeaderComponent={<ListHeader />}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.gridItem}>
+            <TouchableOpacity 
+              style={styles.gridItem}
+              onPress={() => navigation.navigate('SinglePost', { postId: item.id })}
+            >
               <Image source={{ uri: item.photoUrl }} style={styles.gridImage} />
             </TouchableOpacity>
           )}
