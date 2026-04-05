@@ -41,6 +41,7 @@ export default function EditListScreen({ route, navigation }) {
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -133,6 +134,39 @@ export default function EditListScreen({ route, navigation }) {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleDeleteList = () => {
+    Alert.alert(
+      'Tem certeza?',
+      'Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Excluir', 
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              const token = await AsyncStorage.getItem('@token');
+              const res = await fetch(`${API}/lists/${listId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (res.ok) {
+                navigation.navigate('Perfil');
+              } else {
+                Alert.alert('Erro', 'Não foi possível excluir a lista.');
+                setIsDeleting(false);
+              }
+            } catch (e) {
+              Alert.alert('Erro', 'Ocorreu um erro na exclusão.');
+              setIsDeleting(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -249,6 +283,20 @@ export default function EditListScreen({ route, navigation }) {
             })
           )}
         </View>
+
+        {/* Excluir Lista */}
+        <View style={styles.deleteSection}>
+          <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteList} disabled={isDeleting}>
+            {isDeleting ? (
+               <ActivityIndicator size="small" color="#FF3B30" />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                <Text style={styles.deleteBtnText}>Excluir esta lista</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -353,4 +401,20 @@ const styles = StyleSheet.create({
   },
   checkboxSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   noPostsText: { color: '#8E8E93', fontStyle: 'italic', fontSize: 14 },
+
+  deleteSection: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 12,
+  },
+  deleteBtnText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });

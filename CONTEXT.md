@@ -137,7 +137,7 @@ A tela Explorar foi completamente refatorada com:
 - [x] Detalhes e Edição: SinglePostScreen renderiza mapa com pin fixo e PostCard do local; EditPostScreen e EditListScreen permitem edição do nome, descrição e dados opcionais sem apagar fotos; API PUTs implementados
 - [x] Correção de Bugs (Explore & Edit, Autocomplete e Listas): Resolvido problema do `Callout` no ExploreScreen com uso de `onPress` no Marker. Campo GooglePlacesAutocomplete (Georreferenciamento) implantado no EditPostScreen salvando mudanças. Corrigimos os warnings "VirtualizedLists should never be nested" renderizando o autocomplete em block container de `position: "absolute"`.
 - [x] Otimização das Listas Curadas: Expansão do grid de emojis categorizados em Scroll Horizontal no New/Edit. Lógica aprimorada de sincronização no `EditListScreen` utilizando sub-arrays e `map` para consolidar o estado de checkbox a `originalPostIds` e forçando salvamento sem concorrência utilizando a forma canônica de iterar os retornos POST/DELETE na Promessa.
-- [x] Deleção de Listas: Foi adicionado um botão vermelho de "Excluir Lista" no final do `ListDetailScreen` com verificação estrita de titularidade do autor, enviando alertas de "Tem certeza?" suportando `DELETE` completo seguido de retorno à página do Perfil.
+- [x] Deleção de Listas: Foi movido e adicionado um modelo discreto de botão de "Excluir Lista" no final do form no `EditListScreen` resolvendo perfeitamente o encerramento da lista seguido de retorno à página do Perfil.
 
 ## Observações técnicas
 - IP da máquina na rede local: 192.168.0.15 (usado apenas para o Expo Packager)
